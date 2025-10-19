@@ -83,24 +83,24 @@ class AppServiceProvider extends ServiceProvider
             Carbon::SATURDAY,
         ]);
 
-        try {
-            DB::connection()->getPdo();
-            // The table exists in the database
-            $statuses = Status::all();
-            // $user_workspace = auth()->user()->workspaces;
-            $workspaces = Workspace::all();
-            // $user_events = auth()->user()->events;
+        // try {
+        //     DB::connection()->getPdo();
+        //     // The table exists in the database
+        //     $statuses = Status::all();
+        //     // $user_workspace = auth()->user()->workspaces;
+        //     $workspaces = Workspace::all();
+        //     // $user_events = auth()->user()->events;
 
-            // dd($workspaces);
+        //     // dd($workspaces);
 
-            $data = [
-                'statuses' => $statuses,
-                // 'user_events' => $user_events,
-                'workspaces' => $workspaces,
-            ];
+        //     $data = [
+        //         'statuses' => $statuses,
+        //         // 'user_events' => $user_events,
+        //         'workspaces' => $workspaces,
+        //     ];
 
-            view()->share($data);
-        } catch (\Exception $e) {
-        }
+        //     view()->share($data);
+        // } catch (\Exception $e) {
+        // }
     }
 }

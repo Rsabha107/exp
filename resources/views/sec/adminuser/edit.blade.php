@@ -36,7 +36,7 @@
                         <input class="form-control" id="phone" name="phone" type="phone"
                             placeholder="phone number" value="{{ $user->phone }}" required>
                     </div>
-                    <div class="mb-3 text-start">
+                    {{-- <div class="mb-3 text-start">
                         <label class="form-label" for="storage_type_id">Single</label>
                         <select class="form-select" id="storage_type_id" name="storage_type_id">
                             <option value="">Select storage type...</option>
@@ -44,7 +44,7 @@
                             <option value="{{ $type->id }}" {{ $user->storage_type_id == $type->id ? 'selected' : '' }}>{{ $type->title }}</option>
                             @endforeach
                         </select>
-                    </div>
+                    </div> --}}
                     <div class="mb-3 col-md-12">
                         <label class="form-label" for="">
                             <?= get_label('require_email_verification', 'Require email verification?') ?>

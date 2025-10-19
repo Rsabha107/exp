@@ -2,7 +2,7 @@
 <div class="modal fade" id="createTaskModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <form id="form_submit_event" class="form-submit-event" action="{{ route('chl.admin.tasks.store') }}" method="POST">
+            <form id="createTaskForm"  action="{{ route('chl.admin.tasks.store') }}" method="POST" >
                 @csrf
                 <input type="hidden" name="table" value="tasks-list">
                 <div class="modal-header">

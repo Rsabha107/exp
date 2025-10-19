@@ -1,36 +1,25 @@
 <?php
 
-use App\Http\Controllers\Sps\Admin\StorageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\SendMailController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Setting\EventController;
 use App\Http\Controllers\GeneralSettings\AttachmentController;
 use App\Http\Controllers\GeneralSettings\CompanyController;
 // use App\Http\Controllers\Sps\Admin\DashboardController;
-use App\Http\Controllers\Sps\User\UserController as AdminUserController;
-use App\Http\Controllers\AdminController as AuthAdminController;
+use App\Http\Controllers\Chl\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Chl\Auth\AdminController as AuthAdminController;
 use App\Http\Controllers\Auth\MicrosoftController;
 use App\Http\Controllers\Setting\AppSettingController;
 use App\Http\Controllers\Setting\CategoryController;
-use App\Http\Controllers\TaskController;
 
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\Setting\VenueController;
-use App\Http\Controllers\Setting\LocationController;
 use App\Http\Controllers\Setting\PermissionVenueEventController;
-use App\Http\Controllers\Setting\StorageTypeController;
-use App\Http\Controllers\Setting\TodoStatusController;
+
 use App\Http\Controllers\Chl\Admin\TaskController as AdminTaskController;
-use App\Http\Controllers\Sps\AuditLog\AuditLogController;
-use App\Http\Controllers\Sps\Customer\ProfileController;
-use App\Http\Controllers\Sps\VenueAdmin\DashboardController as VenueAdminDashboardController;
-use App\Http\Controllers\Sps\VenueAdmin\StorageController as VenueAdminStorageController;
-use App\Http\Controllers\Sps\Operator\StorageController as OperatorStorageController;
+use App\Http\Controllers\Security\ActivityAuditController;
 use App\Http\Controllers\Chl\VenueAdmin\TaskController as VenueAdminTaskController;
 use App\Http\Controllers\UtilController;
-use Barryvdh\DomPDF\ServiceProvider;
 use Illuminate\Support\Facades\Log;
 use OwenIt\Auditing\Contracts\Audit;
 
@@ -85,7 +74,7 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
     // SPS MANAGEMENT ******************************************************************** Admin All Route
     // 'roles:admin',
 
-    Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmin|VenueAdmin|Operator', 'prevent-back-history', 'auth.session'])->group(function () {
+    Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmin|VenueAdmin', 'prevent-back-history', 'auth.session'])->group(function () {
         Route::controller(AdminUserController::class)->group(function () {
             Route::get('/sps/users/profile', 'profile')->name('chl.users.profile');
             Route::post('/sps/users/profile/update', 'update')->name('chl.users.profile.update');
@@ -97,6 +86,8 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
         // Route::controller(DashboardController::class)->group(function () {
         //     Route::get('/sps/admin/dashboard', 'dashboard')->name('chl.admin.dashboard');
         // });
+        Route::get('/auth/ms-signup', [AuthAdminController::class, 'msSignUp'])->name('auth.ms.signup');
+        Route::post('/signup/ms/store', [AdminUserController::class, 'msStore'])->name('auth.ms.store');
 
         Route::controller(AdminTaskController::class)->group(function () {
             Route::get('/chl/admin/tasks', 'index')->name('chl.admin.tasks.index');
@@ -104,7 +95,9 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
             Route::post('/chl/admin/tasks/store', 'store')->name('chl.admin.tasks.store');
             Route::get('/chl/admin/tasks/{id}/edit', 'edit')->name('chl.admin.tasks.edit');
             Route::post('/update-task-item', 'update')->name('chl.admin.tasks.update');
-            Route::delete('/chl/admin/tasks/{id}', 'destroy')->name('chl.admin.tasks.destroy');
+            // Route::delete('/chl/admin/tasks/{id}', 'destroy')->name('chl.admin.tasks.destroy');
+            Route::delete('/chl/admin/tasks/delete/{id}',  'delete')->name('chl.admin.tasks.delete');
+
 
             Route::post('/chl/admin/tasks/copy-to-lead', 'copyToLead')
                 ->name('chl.admin.tasks.copyToLead');
@@ -239,7 +232,7 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         })->name('b');
         /*************************************** End Play ground */
 
-                // Admin pick
+        // Admin pick
         Route::get('/chl/admin/pick', function () {
             return view('/chl/admin/pick');
         })
@@ -348,10 +341,9 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
             Route::get('/sec/rolesetup/add', 'addRolePermission')->name('sec.rolesetup.add');
         }); //
 
-        Route::controller(AuditLogController::class)->group(function () {
-            Route::get('/sec/log', 'index')->name('sec.log');
-            Route::get('/sec/log/list', 'list')->name('sec.log.list');
-            Route::get('/sec/log/get/{id}', 'get')->name('sec.log.get');
+        Route::controller(ActivityAuditController::class)->group(function () {
+            Route::get('/sec/audit', 'index')->name('sec.audit');
+            Route::get('/sec/audit/list', 'list')->name('sec.audit.list');
         });
     }); //
     // Route::get('/run-migration', function () {

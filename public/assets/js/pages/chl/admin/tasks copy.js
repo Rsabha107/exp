@@ -1,27 +1,4 @@
 $(function() {
-$('#createTaskForm').on('submit', function(e) {
-    e.preventDefault();
-    let formData = $(this).serialize();
-
-    $.ajax({
-        url: $(this).attr('action'),
-        method: 'POST',
-        data: formData,
-        success: function(res) {
-            if (!res.error) {
-                // Replace the list with updated HTML
-                $('#tasks-list').html(res.html);
-                // Hide modal
-                $('#createTaskModal').modal('hide');
-                // Optionally, reset form
-                $('#createTaskForm')[0].reset();
-             toastr.success('Task added successfully!');
-            } else {
-                toastr.error('Failed to add tasks!');
-            }
-        }
-    });
-});
 
     // Handle toggle
     $('#tasks-list').on('change', '.task-toggle', function() {
@@ -42,8 +19,6 @@ $('#createTaskForm').on('submit', function(e) {
         });
     });
 
-
-    
     // Generate tasks from categories
     $('.copy-task-form').submit(function(e) {
         e.preventDefault();
@@ -88,9 +63,52 @@ $('#createTaskForm').on('submit', function(e) {
         });
     });
 
-    
+    // Delete task
+    $('#tasks-list').on('click', '.task-delete', function() {
+        var taskId = $(this).data('id');
+        var url = '/chl/admin/tasks/' + taskId;
 
-    
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This action cannot be undone.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: {
+                        _method: 'DELETE'
+                    },
+                    success: function(response) {
+                        if (response.success && response.html) {
+                            $('#tasks-list').html(response.html);
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: 'Task deleted successfully.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Failed to delete task.'
+                        });
+                        console.error(xhr.responseText);
+                    }
+                });
+            }
+        });
+    });
 
     document.querySelector('#event_dropdown').addEventListener('change', function() {
         document.querySelector('#event_id').value = this.value;

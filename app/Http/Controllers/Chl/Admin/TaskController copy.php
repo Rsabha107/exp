@@ -29,10 +29,11 @@ class TaskController extends Controller
             $query->with(['status', 'statusColor'])
                 ->orderBy('created_at', 'asc');
         }])
-            ->where('event_id', session('EVENT_ID'))
+            ->where('event', session('EVENT_ID'))
             ->get();
 
         $events = Event::all();
+        $venues = Venue::all();
 
         // Load additional data for dropdowns or UI elements
         $venues = Venue::orderBy('title')->get();
@@ -62,59 +63,62 @@ class TaskController extends Controller
     /**
      * Store a newly created task.
      */
-   public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'title' => 'required|string|max:255',
-        'category_id' => 'nullable|exists:categories,id',
-    ]);
+    public function store(Request $request)
+    {
+        Log::info('Storing a new task');
+        $rules = [
+            'title' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:categories,id',
+            // 'due_date' => 'nullable|string',
+            // 'status_id' => 'nullable|exists:todo_statuses,id',
+            // 'status_color_id' => 'nullable|exists:status_colors,id',
+        ];
 
-    if ($validator->fails()) {
-        return response()->json([
-            'error' => true,
-            'message' => implode($validator->errors()->all('<div>:message</div>'))
-        ]);
-    }
-
-    $event = $venue = null;
-    if ($request->category_id) {
-        $category = Category::find($request->category_id);
-        if ($category) {
-            $event_id = $category->event_id;
-            $venue_id = $category->venue_id;
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            $error = true;
+            // $message = 'Employee not create.' . $op->id;
+            $message = implode($validator->errors()->all('<div>:message</div>'));
+            return response()->json([
+                'error' => $error,
+                'message' => $message,
+            ]);
         }
-    }
 
-    Task::create([
-        'title' => $request->title,
-        'category_id' => $request->category_id,
-        'event_id' => $event_id,
-        'venue_id' => $venue_id,
-        'completed_flag' => false,
-    ]);
+        // $due_date = $request->due_date
+        //     ? \Carbon\Carbon::createFromFormat('d/m/Y H:i', $request->due_date)
+        //     : null;
 
-    if ($request->ajax()) {
-        // Fetch updated list
-        $categories = Category::with(['tasks' => function ($query) {
-            $query->with(['status', 'statusColor'])
-                  ->orderBy('created_at', 'asc');
-        }])->where('event_id', session('EVENT_ID'))->get();
+        // Fetch category to get event and venue
+        $event = $venue = null;
+        if ($request->category_id) {
+            $category = Category::find($request->category_id);
+            if ($category) {
+                $event = $category->event;
+                $venue = $category->venue;
+            }
+        }
 
-        $venues = Venue::all();
-
-        // Render the list partial
-        $html = view('chl.admin.tasks.list', compact('categories', 'venues'))->render();
-
-        return response()->json([
-            'error' => false,
-            'message' => 'Task created successfully!',
-            'html' => $html,
+        Task::create([
+            'title' => $request->title,
+            'category_id' => $request->category_id,
+            'event' => $event,         // assign event from category
+            'venue' => $venue,         // assign venue from category
+            'completed' => false,
+            // 'status_id' => $request->status_id,
+            // 'status_color_id' => $request->status_color_id ?? 1,
+            // 'due_date' => $due_date
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'error' => false,
+                'message' => 'Task created successfully!'
+            ]);
+        }
+
+        return redirect()->route('chl.admin.tasks.index')->with('success', 'Task created successfully.');
     }
-
-    return redirect()->route('chl.admin.tasks.index')->with('success', 'Task created successfully.');
-}
-
 
 
     /**
@@ -159,26 +163,30 @@ class TaskController extends Controller
     /**
      * Delete a task.
      */
-
-    public function delete($id)
+    public function destroy($id, Request $request)
     {
         $task = Task::find($id);
-
         if (!$task) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Task not found.'
-            ]);
+            return response()->json(['success' => false, 'message' => 'Task not found']);
         }
 
         $task->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Task deleted successfully!',
-            'task_id' => $id
-        ]);
+        if ($request->ajax()) {
+            $categories = Category::with(['tasks' => function ($query) {
+                $query->orderBy('created_at', 'desc');
+            }])->where('event_id', session('EVENT_ID'))
+            ->get();
+
+            // $categories = Category::with('tasks')->where('event_id', session('EVENT_ID'))->orderBy('created_at', 'asc')->get();
+
+            $html = view('chl.admin.tasks.list', compact('categories'))->render();
+            return response()->json(['success' => true, 'html' => $html]);
+        }
+
+        return redirect()->route('chl.admin.tasks.index')->with('success', 'Task deleted successfully.');
     }
+
 
     /**
      * Toggle completed status.
@@ -193,7 +201,7 @@ class TaskController extends Controller
         $venueId = session('VENUE_ID');
         $eventId = session('EVENT_ID');
 
-        $categories = Category::where('event_id', $eventId) // note: 'event' column in your table
+        $categories = Category::where('event', $eventId) // note: 'event' column in your table
             ->with([
                 'leadTasks' => function ($q) use ($venueId, $eventId) {
                     $q->where('venue_id', $venueId)
@@ -241,7 +249,7 @@ class TaskController extends Controller
             LeadCategory::where('event_id', $request_eventId)->where('venue_id', $request_venueId)->delete();
 
             // Step 2: Copy fresh categories and tasks
-            $categories = Category::where('event_id', $session_event_id)->get();
+            $categories = Category::where('event', $session_event_id)->get();
 
             foreach ($categories as $category) {
                 $leadCategory = LeadCategory::create([

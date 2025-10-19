@@ -73,7 +73,7 @@
             <div class="form-check mb-1 mb-md-0 d-flex align-items-center lh-1">
                 <input type="checkbox"
                     class="form-check-input flex-shrink-0 form-check-line-through mt-0 me-2 task-toggle"
-                    data-id="{{ $task->id }}" @checked($task->completed)>
+                    data-id="{{ $task->id }}" @checked($task->completed_flag)>
                 <label class="form-check-label mb-0 fs-8 me-2 line-clamp-1 flex-grow-1 flex-md-grow-0 cursor-pointer">
                     {{ $task->title }}
                 </label>

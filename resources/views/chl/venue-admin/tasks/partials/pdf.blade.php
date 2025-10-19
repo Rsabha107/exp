@@ -7,10 +7,10 @@
     @foreach ($category->leadTasks as $task)
     <div class="task-row">
         <div class="form-check">
-            <input type="checkbox" class="form-check-input" @checked($task->completed)>
+            <input type="checkbox" class="form-check-input" @checked($task->completed_flag)>
             {{-- <label class="form-check-label">{{ $task->title }}</label> --}}
 
-            @if ($task->completed)
+            @if ($task->completed_flag)
             <span style="color:#28a745;">
                 {{ $task->title }}
 

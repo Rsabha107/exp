@@ -18,7 +18,7 @@
                 {{-- <input type="checkbox"
                     class="form-check-input flex-shrink-0 form-check-line-through mt-0 me-2 task-toggle"
                     data-id="{{ $task->id }}" data-url="{{ route('chl.admin.tasks.toggle', $task->id) }}"
-                @checked($task->completed)> --}}
+                    @checked($task->completed)> --}}
 
                 <label class="form-check-label mb-0 fs-8 me-2 line-clamp-1 flex-grow-1 flex-md-grow-0 cursor-pointer">
                     {{ $task->title }}
@@ -48,16 +48,10 @@
                     class="btn btn-phoenix-secondary btn-icon me-1 fs-10 text-body px-0">
                     <i class="bi bi-pencil"></i>
                 </a>
-                <!-- <button class="btn btn-phoenix-secondary btn-icon fs-10 text-danger px-0 task-delete"
-                    data-id="{{ $task->id }}">
-                    <i class="bi bi-trash"></i>
-                </button> -->
                 <button class="btn btn-phoenix-secondary btn-icon fs-10 text-danger px-0 task-delete"
                     data-id="{{ $task->id }}">
                     <i class="bi bi-trash"></i>
                 </button>
-
-
             </div>
 
             <div class="hover-md-hide hover-lg-show hover-xl-hide">

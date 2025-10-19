@@ -1,7 +1,7 @@
 @extends('chl.admin.layout.template')
 
 @section('main')
-<div class="content"
+<div class="content mb-5"
     style="background-color: #ffffff; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
     <div class="mb-9">
         <h2 class="mb-4">
@@ -17,7 +17,7 @@
             <!-- Generate Tasks Button -->
             <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
                 data-bs-target="#generateTasksModal">
-                Generate Tasks from Predefined List
+                Generate Tasks from this Predefined List
             </button>
         </div>
         @include('chl.admin.tasks.modals.create_tasks_modal')
@@ -61,30 +61,108 @@
                             </div>
                         </div>
 
-                       <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= get_label('close', 'Close') ?></button>
-                    <button type="submit" class="btn btn-primary" id="submit_btn"><?= get_label('generate', 'Generate') ?></button>
-                </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><?= get_label('close', 'Close') ?></button>
+                            <button type="submit" class="btn btn-primary" id="submit_btn"><?= get_label('generate', 'Generate') ?></button>
+                        </div>
                     </form>
 
                 </div>
             </div>
         </div>
-        
+
     </div>
 </div>
 @endsection
 
 @push('script')
 <script src="{{ asset('assets/js/pages/chl/admin/tasks.js') }}"></script>
+
 <script>
-    $(function() {
-        // CSRF token for AJAX
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    $(document).ready(function() {
+    console.log("Document is ready.");
+
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+    console.log("CSRF token setup completed:", $('meta[name="csrf-token"]').attr('content'));
+
+    $('#tasks-list').on('click', '.task-delete', function(e) {
+        e.preventDefault();
+        console.log("Delete button clicked.");
+
+        const taskId = $(this).data('id');
+        console.log("Task ID to delete:", taskId);
+
+        const url = '/chl/admin/tasks/delete/' + taskId;
+        console.log("AJAX URL:", url);
+
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This action cannot be undone.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            console.log("Swal result:", result);
+
+            if (result.isConfirmed) {
+                console.log("User confirmed deletion.");
+
+                $.ajax({
+                    url: url,
+                    type: 'DELETE',
+                    success: function(response) {
+                        console.log("AJAX success response:", response);
+
+                        if (response.success) {
+                            // Remove the task div from the list
+                            const taskDiv = $('[data-todo-offcanvas-target="todoOffcanvas-' + response.task_id + '"]');
+                            taskDiv.fadeOut(300, function() {
+                                $(this).remove();
+                                console.log("Task div removed from DOM:", response.task_id);
+
+                                // Optionally, remove category label if it has no tasks left
+                                const categoryDiv = taskDiv.closest('h5.category-label').nextUntil('h5.category-label');
+                                if (categoryDiv.length === 0) {
+                                    taskDiv.closest('h5.category-label').remove();
+                                }
+                            });
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Deleted!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Oops...',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error("AJAX error response:", xhr.responseText);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Something went wrong.'
+                        });
+                    }
+                });
+            } else {
+                console.log("User canceled deletion.");
             }
         });
     });
+});
 </script>
 @endpush

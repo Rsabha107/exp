@@ -1,4 +1,4 @@
-@extends('cms.admin.layout.admin_template')
+@extends('chl.admin.layout.template')
 @section('main')
 
 <!-- ===============================================-->
@@ -178,7 +178,5 @@
             });
         });
     </script>
-
-    @include('mds.partials.event-js')
 
     @endpush

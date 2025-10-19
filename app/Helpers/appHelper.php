@@ -25,25 +25,51 @@ if (!function_exists('get_label')) {
     }
 }
 
-if (!function_exists('getStatusIdByLabel')) {
-    function getStatusIdByLabel(string $label): ?int
+if (!function_exists('generateSecurePassword')) {
+    function generateSecurePassword($length = 12)
     {
-        Log::info('getStatusIdByLabel called with label: ' . $label);
-        $status_id = ItemStatus::where('title', $label)->pluck('id')->first();
+        $lowercase    = 'abcdefghijklmnopqrstuvwxyz';
+        $uppercase    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $numbers      = '0123456789';
+        $specialChars = '!@#$%^&*()-_=+<>?';
 
-        Log::info('getStatusIdByLabel found status_id: ' . ($status_id ?? 'null'));
-        return $status_id ?? null;
+        // Ensure at least one of each
+        $password = '';
+        $password .= $lowercase[random_int(0, strlen($lowercase) - 1)];
+        $password .= $uppercase[random_int(0, strlen($uppercase) - 1)];
+        $password .= $numbers[random_int(0, strlen($numbers) - 1)];
+        $password .= $specialChars[random_int(0, strlen($specialChars) - 1)];
+
+        // Fill the rest
+        $all = $lowercase . $uppercase . $numbers . $specialChars;
+        for ($i = strlen($password); $i < $length; $i++) {
+            $password .= $all[random_int(0, strlen($all) - 1)];
+        }
+
+        // Shuffle to randomize order
+        return str_shuffle($password);
     }
 }
 
-if (!function_exists('getProfileStatusIdByLabel')) {
-    function getProfileStatusIdByLabel(string $label): ?int
-    {
-        $status_id = ProfileStatus::where('title', $label)->pluck('id')->first();
+// if (!function_exists('getStatusIdByLabel')) {
+//     function getStatusIdByLabel(string $label): ?int
+//     {
+//         Log::info('getStatusIdByLabel called with label: ' . $label);
+//         $status_id = ItemStatus::where('title', $label)->pluck('id')->first();
 
-        return $status_id ?? null;
-    }
-}
+//         Log::info('getStatusIdByLabel found status_id: ' . ($status_id ?? 'null'));
+//         return $status_id ?? null;
+//     }
+// }
+
+// if (!function_exists('getProfileStatusIdByLabel')) {
+//     function getProfileStatusIdByLabel(string $label): ?int
+//     {
+//         $status_id = ProfileStatus::where('title', $label)->pluck('id')->first();
+
+//         return $status_id ?? null;
+//     }
+// }
 
 // used for encrypting and decrypting data in a URL-safe manner
 if (!function_exists('encryptUrlSafe') || !function_exists('decryptUrlSafe')) {
@@ -175,17 +201,17 @@ if (!function_exists('makeInitialsFromSingleWord')) {
  * @param string $name
  * @return string
  */
-if (!function_exists('gerOrderStatusId')) {
-    function gerOrderStatusId(string $name): string
-    {
-        $order_status_id = OrderStatus::where('title', $name)->value('id');
-        if ($order_status_id) {
-            return $order_status_id;
-        } else {
-            return '';
-        }
-    }
-}
+// if (!function_exists('gerOrderStatusId')) {
+//     function gerOrderStatusId(string $name): string
+//     {
+//         $order_status_id = OrderStatus::where('title', $name)->value('id');
+//         if ($order_status_id) {
+//             return $order_status_id;
+//         } else {
+//             return '';
+//         }
+//     }
+// }
 
 
 if (!function_exists('format_date')) {

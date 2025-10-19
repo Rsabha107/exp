@@ -8,7 +8,7 @@ $profileData = App\Models\User::find($id);
 
 @endphp
 
-<nav class="navbar navbar-top fixed-top navbar-expand" id="navbarDefault">
+<nav class="navbar navbar-top fixed-top navbar-expand mds_header_background" id="navbarDefault">
     <div class="collapse navbar-collapse justify-content-between">
         <div class="navbar-logo">
 
@@ -22,9 +22,9 @@ $profileData = App\Models\User::find($id);
                         <img src="{{ asset(config('settings.website_logo')) }}" alt="{{ __('chl.page_title') }}"
                             width="150" />
                         {{-- @if ($session_set) --}}
-                        <h3 class="logo-text ms-2 d-none d-sm-block">{{ config('settings.website_name') }} </h3>
+                        <h3 class="logo-text ms-2 d-none d-sm-block text-white">{{ config('settings.website_name') }} </h3>
                         <div class="theme-control-toggle fa-icon-wait px-2 d-none d-sm-block">
-                            <h6 class="mt-2 d-sm-block d-none text-primary">({{ $event?->name }})</h6>
+                            <h6 class="mt-2 d-sm-block d-none text-white">({{ $event?->name }})</h6>
                         </div>
                     </div>
                 </div>
@@ -38,17 +38,7 @@ $profileData = App\Models\User::find($id);
         <ul class="navbar-nav navbar-nav-icons flex-row">
             <li class="nav-item">
                 <div class="theme-control-toggle fa-icon-wait px-2">
-                    <h6 class="mt-2">{{ $profileData->name }}</h6>
-                </div>
-                <div class="theme-control-toggle fa-icon-wait px-2">
-                    <input class="form-check-input ms-0 theme-control-toggle-input" type="checkbox"
-                        data-theme-control="phoenixTheme" value="dark" id="themeControlToggle" />
-                    <label class="mb-0 theme-control-toggle-label theme-control-toggle-light" for="themeControlToggle"
-                        data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Switch theme"
-                        style="height:32px;width:32px;"><span class="icon" data-feather="moon"></span></label>
-                    <label class="mb-0 theme-control-toggle-label theme-control-toggle-dark" for="themeControlToggle"
-                        data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="Switch theme"
-                        style="height:32px;width:32px;"><span class="icon" data-feather="sun"></span></label>
+                    <h6 class="mt-2 text-white">{{ $profileData->name }}</h6>
                 </div>
             </li>
 
@@ -62,7 +52,7 @@ $profileData = App\Models\User::find($id);
             <li class="nav-item dropdown">
                 <a class="nav-link" href="#" style="min-width: 2.25rem" role="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                    data-bs-auto-close="outside"><span class="d-block" style="height:20px;width:20px;"><span
+                    data-bs-auto-close="outside"><span class="d-block text-white" style="height:20px;width:20px;"><span
                             data-feather="calendar" style="height:20px;width:20px;"></span></span></a>
 
                 <div class="dropdown-menu dropdown-menu-end notification-dropdown-menu py-0 shadow border navbar-dropdown-caret"

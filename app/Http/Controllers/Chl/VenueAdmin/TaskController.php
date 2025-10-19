@@ -117,7 +117,7 @@ class TaskController extends Controller
     public function toggle($id)
     {
         $task = LeadTask::findOrFail($id);
-        $task->completed = !$task->completed;
+        $task->completed_flag = !$task->completed_flag;
         $task->save();
 
         $venueId = session('VENUE_ID');
@@ -182,7 +182,7 @@ class TaskController extends Controller
 
         // Save PDF to storage
         $timestamp = now()->format('Ymd_His');
-        $fileName = "daily_operations_checklist_{$timestamp}.pdf";
+        $fileName = "exp_{$currentEvent->name}-{$currentVenue->short_name}-{$timestamp}.pdf";
         $filePath = 'pdf-exports/' . $fileName;
         Storage::disk('private')->makeDirectory('pdf-exports');
         // Storage::disk('private')->put('pdf-exports/' . $fileName, $pdf->output());

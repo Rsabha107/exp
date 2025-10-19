@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Event;
 use App\Models\User;
 use App\Notifications\EmailOtpVerification;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -29,76 +30,6 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function storexx(LoginRequest $request)
-    // : RedirectResponse
-    {
-        Log::info('AuthenticatedSessionController:store');
-        Log::info($request);
-
-        session()->forget('OTPSESSIONKEY');
-
-        $request->authenticate();
-
-        // $user = User::find(Auth::user()->id);
-        $user = auth()->user();
-
-        $request->session()->regenerate();
-
-        Auth::logoutOtherDevices($request->password);
-
-        Log::info('AuthenticatedSessionController:store user: ' . $user);
-        Log::info('settings.enable_otp: ' . config('settings.enable_otp'));
-        if (config('settings.enable_otp')) {
-            // $this->showOtp();
-            // $simpleOTP = new SimpleOTP();
-            // $code = $simpleOTP->create(auth()->user()->email);
-            $otp = SimplOtp::generate(auth()->user()->email);
-            if ($otp->status === true) {
-                $user->notify(new EmailOtpVerification($otp->token));
-            }
-            return view('auth/otp');
-        }
-
-        // //set the default workspace as set during user creation
-        // session()->put('workspace_id', $request->user()->workspace_id);
-        // Log::info('AuthenticatedSessionController:store workspace_id: '.$request->user()->workspace_id);
-
-        // Log::info($request->authenticate());
-        // Log::info($request->user()->role);
-        $url = '';
-        if ($request->user()->hasRole('SuperAdmin')) {
-            Log::info('AuthenticatedSessionController:store user is admin');
-            $url = 'sps/admin';
-            return response()->json([
-                'success' => true,
-                'redirect_url' => route('sps.admin')
-            ]);
-            return response()->json(['redirect' => $url]);
-        } elseif ($request->user()->hasRole('VenueAdmin')) {
-            Log::info('AuthenticatedSessionController:store user is not admin');
-            $url = 'sps/venue-admin';
-            return response()->json([
-                'success' => true,
-                'redirect_url' => route('sps.venue.admin')
-            ]);
-        }
-
-        // if ($request->user()->role === 'admin'){
-        //     $url = 'mds/admin/booking';
-        //     return redirect()->intended($url);
-        // } elseif  ($request->user()->role === 'user'){
-        //     $url = 'mds/customer/booking';
-        //     return redirect()->intended($url);
-        // }
-
-        // return back()->withErrors([
-        //     'email' => 'Username and password don\'t match.',
-        // ])->onlyInput('email');
-        Log::info('AuthenticatedSessionController:store url: ' . $url);
-
-        return redirect()->intended($url);
-        // return redirect()->intended(RouteServiceProvider::HOME);.
-    }
 
     public function store(LoginRequest $request)
     // : RedirectResponse
@@ -170,12 +101,25 @@ class AuthenticatedSessionController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         Log::info('AuthenticatedSessionController:destroy');
+        $provider = $request->user()->provider;
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        if ($provider === 'local') {
+            appLog('Local login - redirecting to login page');
+            session()->forget('login_method');
+            return redirect('/');
+        }
+
+        session()->forget('login_method');
+        $microsoftLogoutUrl = Socialite::driver('microsoft')->getLogoutUrl(route('login')); // Replace 'azure' with your Microsoft Socialite driver name if different, and 'login' with your desired redirect URI after Microsoft logout.
+        Log::info('Redirecting to Microsoft logout URL: ' . $microsoftLogoutUrl);
+        return redirect($microsoftLogoutUrl);
+
+        // return redirect('/');
     }
 }

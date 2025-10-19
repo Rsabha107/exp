@@ -8,9 +8,10 @@ use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Setting\EventController;
 use App\Http\Controllers\GeneralSettings\AttachmentController;
 use App\Http\Controllers\GeneralSettings\CompanyController;
-use App\Http\Controllers\Sps\Admin\DashboardController;
+// use App\Http\Controllers\Sps\Admin\DashboardController;
 use App\Http\Controllers\Sps\User\UserController as AdminUserController;
 use App\Http\Controllers\AdminController as AuthAdminController;
+use App\Http\Controllers\Auth\MicrosoftController;
 use App\Http\Controllers\Setting\AppSettingController;
 use App\Http\Controllers\Setting\CategoryController;
 use App\Http\Controllers\TaskController;
@@ -18,15 +19,16 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\Setting\VenueController;
 use App\Http\Controllers\Setting\LocationController;
+use App\Http\Controllers\Setting\PermissionVenueEventController;
 use App\Http\Controllers\Setting\StorageTypeController;
 use App\Http\Controllers\Setting\TodoStatusController;
-use App\Http\Controllers\Sps\Admin\TaskController as AdminTaskController;
+use App\Http\Controllers\Chl\Admin\TaskController as AdminTaskController;
 use App\Http\Controllers\Sps\AuditLog\AuditLogController;
 use App\Http\Controllers\Sps\Customer\ProfileController;
 use App\Http\Controllers\Sps\VenueAdmin\DashboardController as VenueAdminDashboardController;
 use App\Http\Controllers\Sps\VenueAdmin\StorageController as VenueAdminStorageController;
 use App\Http\Controllers\Sps\Operator\StorageController as OperatorStorageController;
-use App\Http\Controllers\Sps\VenueAdmin\TaskController as VenueAdminTaskController;
+use App\Http\Controllers\Chl\VenueAdmin\TaskController as VenueAdminTaskController;
 use App\Http\Controllers\UtilController;
 use Barryvdh\DomPDF\ServiceProvider;
 use Illuminate\Support\Facades\Log;
@@ -43,24 +45,6 @@ use OwenIt\Auditing\Contracts\Audit;
 |
 */
 
-// Route::get('/', function () {
-//     if (auth()->check()) {
-//         if (auth()->user()->hasRole('SuperAdmin')) {
-//             return redirect()->route('sps.admin');
-//         } elseif (auth()->user()->hasRole('VenueAdmin')) {
-//             Log::info('Redirecting to sps.venue.admin');
-//             return redirect()->route('sps.venue.admin');
-//         } elseif (auth()->user()->hasRole('Operator')) {
-//             Log::info('Redirecting to sps.operator');
-//             return redirect()->route('sps.operator');
-//         } else {
-//             return redirect()->route('index');
-//         }
-//     } else {
-//         return redirect()->route('index');
-//     }
-// })->name('home');
-
 Route::get('/', function () {
 
     Log::info('In home route');
@@ -71,9 +55,8 @@ Route::get('/', function () {
     }
 
     $roleRoutes = [
-        'SuperAdmin' => 'sps.admin',
-        'VenueAdmin'   => 'sps.venue.admin',
-        'Operator'   => 'sps.operator',
+        'SuperAdmin' => 'chl.admin.tasks.index',
+        'VenueAdmin'   => 'chl.venue.admin.tasks.index',
     ];
 
     foreach ($roleRoutes as $role => $route) {
@@ -93,13 +76,10 @@ Route::get('/', function () {
     abort(403, 'Unauthorized role');
 })->name('home');
 
-Route::get('/index', [ProfileController::class, 'index'])->name('index');
-Route::get('/spectator', [ProfileController::class, 'spectator'])->name('spectator');
-Route::post('/visitors/store', [ProfileController::class, 'store'])->name('visitor.store');
-Route::get('/sps/customer/visitor', function () {
-    return view('sps.customer.visitor');
-})->name('sps.customer.visitor');
-Route::get('/sps/customer/confirmation/{token}', [ProfileController::class, 'confirmation'])->name('sps.customer.confirmation');
+Route::controller(MicrosoftController::class)->group(function () {
+    Route::get('auth/microsoft', 'redirectToMicrosoft')->name('auth.microsoft');
+    Route::get('auth/microsoft/callback', 'handleMicrosoftCallback');
+});
 
 Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function () {
     // SPS MANAGEMENT ******************************************************************** Admin All Route
@@ -107,38 +87,34 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
 
     Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmin|VenueAdmin|Operator', 'prevent-back-history', 'auth.session'])->group(function () {
         Route::controller(AdminUserController::class)->group(function () {
-            Route::get('/sps/users/profile', 'profile')->name('sps.users.profile');
-            Route::post('/sps/users/profile/update', 'update')->name('sps.users.profile.update');
-            Route::post('/sps/users/profile/password/update', 'updatePassword')->name('sps.users.profile.password.update');
+            Route::get('/sps/users/profile', 'profile')->name('chl.users.profile');
+            Route::post('/sps/users/profile/update', 'update')->name('chl.users.profile.update');
+            Route::post('/sps/users/profile/password/update', 'updatePassword')->name('chl.users.profile.password.update');
         });
     });
 
     Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:SuperAdmin', 'prevent-back-history', 'auth.session'])->group(function () {
-        Route::controller(DashboardController::class)->group(function () {
-            Route::get('/sps/admin/dashboard', 'dashboard')->name('sps.admin.dashboard');
-        });
+        // Route::controller(DashboardController::class)->group(function () {
+        //     Route::get('/sps/admin/dashboard', 'dashboard')->name('chl.admin.dashboard');
+        // });
 
         Route::controller(AdminTaskController::class)->group(function () {
-            Route::get('/sps/admin/tasks', 'index')->name('sps.admin.tasks.index');
-            Route::get('/sps/admin/tasks/create', 'create')->name('sps.admin.tasks.create');
-            Route::post('/sps/admin/tasks/store', 'store')->name('sps.admin.tasks.store');
-            Route::get('/sps/admin/tasks/{id}/edit', 'edit')->name('sps.admin.tasks.edit');
-            Route::put('/sps/admin/tasks/{id}', 'update')->name('sps.admin.tasks.update');
-            Route::delete('/sps/admin/tasks/{id}', 'destroy')->name('sps.admin.tasks.destroy');
-            Route::post('/sps/admin/tasks/{task}/assign', 'assignTaskToVenue')->name('sps.admin.tasks.assign');
+            Route::get('/chl/admin/tasks', 'index')->name('chl.admin.tasks.index');
+            Route::get('/chl/admin/tasks/create', 'create')->name('chl.admin.tasks.create');
+            Route::post('/chl/admin/tasks/store', 'store')->name('chl.admin.tasks.store');
+            Route::get('/chl/admin/tasks/{id}/edit', 'edit')->name('chl.admin.tasks.edit');
+            Route::post('/update-task-item', 'update')->name('chl.admin.tasks.update');
+            Route::delete('/chl/admin/tasks/{id}', 'destroy')->name('chl.admin.tasks.destroy');
 
-            Route::post('/sps/admin/tasks/copy-to-lead', 'copyToLead')
-                ->name('sps.admin.tasks.copyToLead');
+            Route::post('/chl/admin/tasks/copy-to-lead', 'copyToLead')
+                ->name('chl.admin.tasks.copyToLead');
 
-            Route::get('/sps/admin/orders/{id}/switch', 'switch')->name('sps.admin.orders.switch');
+            Route::get('/tasks/admin/orders/{id}/switch', 'switch')->name('tasks.admin.orders.switch');
 
 
             // Toggle complete/incomplete
-            Route::patch('/sps/admin/tasks/{task}/toggle', 'toggle')->name('sps.admin.tasks.toggle');
-            // Refresh only task list (ul)
-            Route::get('/sps/admin/tasks/list/refresh', 'tasksList')->name('sps.admin.tasks.tasksList');
+            Route::patch('/chl/admin/tasks/{task}/toggle', 'toggle')->name('chl.admin.tasks.toggle');
         });
-
 
 
         Route::controller(CategoryController::class)->group(function () {
@@ -148,35 +124,8 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
             Route::post('setting/categories/store', 'store')->name('setting.category.store');
             Route::get('setting/categories/{id}/edit', 'edit')->name('setting.category.edit');
             Route::put('setting/categories/{id}', 'update')->name('setting.category.update');
-            // Route::get('/sps/category/visitor/mv/get/{id}', 'getVisitorResultView')->name('sps.operator.visitor.mv.get');
+            // Route::get('/sps/category/visitor/mv/get/{id}', 'getVisitorResultView')->name('chl.operator.visitor.mv.get');
             Route::delete('setting/categories/{id}', 'delete')->name('setting.category.delete');
-        });
-
-        Route::controller(StorageController::class)->group(function () {
-            Route::get('/sps/admin', 'index')->name('sps.admin');
-            Route::get('/sps/admin/list', 'list')->name('sps.admin.list');
-            Route::get('/sps/admin/create', 'create')->name('sps.admin.create');
-            Route::post('/sps/admin/visitor/store', 'store')->name('sps.admin.visitor.store');
-            Route::post('/sps/admin/item/store', 'ItemStore')->name('sps.admin.item.store');
-            Route::get('/sps/admin/item/mv/edit/{id}', 'getItemDescriptionView')->name('sps.admin.item.mv.edit');
-            Route::get('/sps/admin/visitor/mv/get/{id}', 'getVisitorResultView')->name('sps.admin.visitor.mv.get');
-            Route::get('/sps/admin/find', 'find')->name('sps.admin.find');
-            Route::post('/sps/admin/find', 'get')->name('sps.admin.get');
-            Route::delete('/sps/admin/visitor/delete/{id}', 'deleteVisitor')->name('sps.admin.visitor.delete');
-            // update status routes
-            Route::post('/sps/admin/item/status/update', 'updateStatus')->name('sps.admin.item.status.update');
-            Route::get('/sps/admin/item/status/edit/{id}', 'editStatus')->name('sps.admin.item.status.edit');
-            // update inline fields
-            Route::post('/sps/admin/item/update-field/{id}', 'updateField')->name('sps.admin.item.update.field');
-
-            Route::get('/sps/admin/orders/{id}/switch', 'switch')->name('sps.admin.orders.switch');
-            Route::get('/sps/admin', 'index')->name('sps.admin');
-
-            // // check-in and check-out routes
-            // Route::post('/sps/admin/update-status', 'updateCheckInStatus')->name('sps.admin.profile.update.status');
-            // check-in and check-out routes
-            Route::post('/sps/admin/update-status', 'updateCheckInStatus')->name('sps.admin.profile.update.status');
-            Route::post('/sps/admin/update-item-status', 'updateCheckInItemStatus')->name('sps.admin.item.update.status');
         });
 
         // Venue
@@ -201,24 +150,16 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
             // Route::get('/cms/setting/event/file/{file}', 'getPrivateFile')->name('cms.setting.event.file');
         });
 
-        // Location
-        Route::controller(LocationController::class)->group(function () {
-            Route::get('/setting/location', 'index')->name('setting.location');
-            Route::get('/setting/location/list', 'list')->name('setting.location.list');
-            Route::get('/setting/location/get/{id}', 'get')->name('setting.location.get');
-            Route::post('setting/location/update', 'update')->name('setting.location.update');
-            Route::delete('/setting/location/delete/{id}', 'delete')->name('setting.location.delete');
-            Route::post('/setting/location/store', 'store')->name('setting.location.store');
-        });
-
-        // Storage Type
-        Route::controller(StorageTypeController::class)->group(function () {
-            Route::get('/setting/storage-type', 'index')->name('setting.storage.type');
-            Route::get('/setting/storage-type/list', 'list')->name('setting.storage.type.list');
-            Route::get('/setting/storage-type/get/{id}', 'get')->name('setting.storage.type.get');
-            Route::post('setting/storage-type/update', 'update')->name('setting.storage.type.update');
-            Route::delete('/setting/storage-type/delete/{id}', 'delete')->name('setting.storage.type.delete');
-            Route::post('/setting/storage-type/store', 'store')->name('setting.storage.type.store');
+        //Permisssion venue event
+        Route::controller(PermissionVenueEventController::class)->group(function () {
+            Route::get('/setting/per_venue_event', 'index')->name('setting.per_venue_event');
+            Route::get('/setting/per_venue_event/list', 'list')->name('setting.per_venue_event.list');
+            Route::get('/setting/per_venue_event/get/{id}', 'get')->name('setting.per_venue_event.get');
+            Route::post('setting/per_venue_event/update', 'update')->name('setting.per_venue_event.update');
+            Route::delete('/setting/per_venue_event/delete/{id}', 'delete')->name('setting.per_venue_event.delete');
+            Route::post('/setting/per_venue_event/store', 'store')->name('setting.per_venue_event.store');
+            Route::get('/setting/per_venue_event/mv/get/{id}', 'getEventView')->name('setting.per_venue_event.get.mv');
+            // Route::get('/cms/setting/event/file/{file}', 'getPrivateFile')->name('cms.setting.event.file');
         });
 
         //Application Setting
@@ -232,11 +173,11 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
         });
 
         Route::controller(AdminUserController::class)->group(function () {
-            Route::get('/sps/admin/users/profile', 'profile')->name('sps.admin.users.profile');
-            Route::post('/sps/admin/users/profile/update', 'update')->name('sps.admin.users.profile.update');
-            Route::post('/sps/admin/users/profile/password/update', 'updatePassword')->name('sps.admin.users.profile.password.update');
-            // Route::get('/sps/admin/users/invite-user', 'showForm')->name('sps.admin.users.invite.form');
-            // Route::post('/admin/invite-user', 'sendInvite')->name('sps.admin.users.invite.send');
+            Route::get('/sps/admin/users/profile', 'profile')->name('chl.admin.users.profile');
+            Route::post('/sps/admin/users/profile/update', 'update')->name('chl.admin.users.profile.update');
+            Route::post('/sps/admin/users/profile/password/update', 'updatePassword')->name('chl.admin.users.profile.password.update');
+            // Route::get('/sps/admin/users/invite-user', 'showForm')->name('chl.admin.users.invite.form');
+            // Route::post('/admin/invite-user', 'sendInvite')->name('chl.admin.users.invite.send');
         });
 
         // General Settings MANAGEMENT ******************************************************************** Admin All Route
@@ -248,92 +189,30 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
     });
 
     Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:VenueAdmin', 'prevent-back-history', 'auth.session'])->group(function () {
-        Route::controller(VenueAdminDashboardController::class)->group(function () {
-            Route::get('/sps/venue-admin/dashboard', 'dashboard')->name('sps.venue.admin.dashboard');
-        });
+        // Route::controller(VenueAdminDashboardController::class)->group(function () {
+        //     Route::get('/sps/venue-admin/dashboard', 'dashboard')->name('chl.venue.admin.dashboard');
+        // });
 
         Route::controller(VenueAdminTaskController::class)->group(function () {
-            Route::get('/sps/venue-admin/tasks', 'index')->name('sps.venue.admin.tasks.index');
-            Route::get('/sps/venue-admin/tasks/create', 'create')->name('sps.venue.admin.tasks.create');
-            Route::post('/sps/venue-admin/tasks/store', 'store')->name('sps.venue.admin.tasks.store');
-            Route::get('/sps/venue-admin/tasks/{id}/edit', 'edit')->name('sps.venue.admin.tasks.edit');
-            Route::put('/sps/venue-admin/tasks/{id}', 'update')->name('sps.venue.admin.tasks.update');
-            Route::delete('/sps/venue-admin/tasks/{id}', 'destroy')->name('sps.venue.admin.tasks.destroy');
+            Route::get('/chl/venue-admin/tasks', 'index')->name('chl.venue.admin.tasks.index');
+            Route::get('/chl/venue-admin/tasks/create', 'create')->name('chl.venue.admin.tasks.create');
+            Route::post('/chl/venue-admin/tasks/store', 'store')->name('chl.venue.admin.tasks.store');
+            Route::get('/chl/venue-admin/tasks/{id}/edit', 'edit')->name('chl.venue.admin.tasks.edit');
+            Route::put('/chl/venue-admin/tasks/{id}', 'update')->name('chl.venue.admin.tasks.update');
+            Route::delete('/chl/venue-admin/tasks/{id}', 'destroy')->name('chl.venue.admin.tasks.destroy');
 
-            Route::get('admin/orders/{id}/switch', 'switch')->name('admin.orders.switch');
+            Route::get('/chl/venue-admin/orders/{id}/switch', 'switch')->name('chl.venue.admin.orders.switch');
+            Route::get('/chl/venue-admin/venue/{id}/switch', 'venueSwitch')->name('chl.venue.admin.venue.switch');
 
-
-            Route::post('/sps/venue-admin/tasks/comment', 'saveComment')->name('sps.venue.admin.tasks.comment');
-            Route::post('tasks/comment/delete', 'deleteComment')->name('venue.admin.tasks.comment.delete');
+            Route::post('/chl/venue-admin/tasks/comment', 'saveComment')->name('chl.venue.admin.tasks.comment');
+            Route::delete('tasks/comment/delete', 'deleteComment')->name('chl.admin.tasks.comment.delete');
 
 
             // Toggle complete/incomplete
-            Route::post('/sps/venue-admin/tasks/{task}/toggle', 'toggle')->name('sps.venue.admin.tasks.toggle');
+            Route::post('/chl/venue-admin/tasks/{task}/toggle', 'toggle')->name('chl.venue.admin.tasks.toggle');
 
-            Route::get('/sps/venue-admin/tasks/export/pdf', 'exportPdf')->name('sps.venue.admin.tasks.export.pdf');
-            Route::get('/sps/pdf/download', 'preview')->name('sps.pdf.download');
-        });
-
-        Route::controller(VenueAdminStorageController::class)->group(function () {
-            Route::get('/sps/venue-admin', 'index')->name('sps.venue.admin');
-            Route::get('/sps/venue-admin/list', 'list')->name('sps.venue.admin.list');
-            Route::get('/sps/venue-admin/create', 'create')->name('sps.venue.admin.create');
-            Route::post('/sps/venue-admin/visitor/store', 'store')->name('sps.venue.admin.visitor.store');
-            Route::post('/sps/venue-admin/item/store', 'ItemStore')->name('sps.venue.admin.item.store');
-            Route::get('/sps/venue-admin/item/mv/edit/{id}', 'getItemDescriptionView')->name('sps.venue.admin.item.mv.edit');
-            Route::get('/sps/venue-admin/visitor/mv/get/{id}', 'getVisitorResultView')->name('sps.venue.admin.visitor.mv.get');
-            Route::get('/sps/venue-admin/find', 'find')->name('sps.venue.admin.find');
-            Route::post('/sps/venue-admin/get', 'get')->name('sps.venue.admin.get');
-            Route::delete('/sps/venue-admin/visitor/delete/{id}', 'deleteVisitor')->name('sps.venue.admin.visitor.delete');
-            // update status routes
-            Route::post('/sps/venue-admin/item/status/update', 'updateStatus')->name('sps.venue.admin.item.status.update');
-            Route::get('/sps/venue-admin/item/status/edit/{id}', 'editStatus')->name('sps.venue.admin.item.status.edit');
-            // update inline fields
-            Route::post('/sps/venue-admin/item/update-field/{id}', 'updateField')->name('sps.venue.admin.item.update.field');
-
-            Route::get('/sps/venue-admin/orders/{id}/switch', 'switch')->name('sps.venue.admin.orders.switch');
-            Route::get('/sps/venue-admin/venue/{id}/switch', 'venueSwitch')->name('sps.venue.admin.venue.switch');
-
-            // check-in and check-out routes
-            Route::post('/sps/venue-admin/update-status', 'updateCheckInStatus')->name('sps.venue.admin.profile.update.status');
-            Route::post('/sps/venue-admin/update-item-status', 'updateCheckInItemStatus')->name('sps.venue.admin.item.update.status');
-        });
-    });
-
-    Route::middleware(['auth', 'otp', 'mutli.event', 'XssSanitizer', 'role:Operator', 'prevent-back-history', 'auth.session'])->group(function () {
-
-        Route::controller(OperatorStorageController::class)->group(function () {
-            Route::get('/sps/operator', 'index')->name('sps.operator');
-            Route::get('/sps/operator/list', 'list')->name('sps.operator.list');
-            Route::get('/sps/operator/create', 'create')->name('sps.operator.create');
-            Route::post('/sps/operator/visitor/store', 'store')->name('sps.operator.visitor.store');
-            Route::post('/sps/operator/item/store', 'ItemStore')->name('sps.operator.item.store');
-            Route::get('/sps/operator/item/mv/edit/{id}', 'getItemDescriptionView')->name('sps.operator.item.mv.edit');
-            Route::get('/sps/operator/visitor/mv/get/{id}', 'getVisitorResultView')->name('sps.operator.visitor.mv.get');
-            Route::get('/sps/operator/find', 'find')->name('sps.operator.find');
-
-            Route::get('/sps/operator/find_direct/{id}', 'find_direct')->name('sps.operator.find_direct');
-            Route::post('/sps/operator/item/update-storage', 'updateStorage')->name('sps.operator.item.update.storage');
-
-
-            Route::post('/sps/operator/get', 'get')->name('sps.operator.get');
-            Route::delete('/sps/operator/visitor/delete/{id}', 'deleteVisitor')->name('sps.operator.visitor.delete');
-            // update status routes
-            Route::post('/sps/operator/item/status/update', 'updateStatus')->name('sps.operator.item.status.update');
-            Route::get('/sps/operator/item/status/edit/{id}', 'editStatus')->name('sps.operator.item.status.edit');
-            // update inline fields
-            Route::post('/sps/operator/item/update-field/{id}', 'updateField')->name('sps.operator.item.update.field');
-
-            //Routes handeling for QR scanning (operator using mobile device) 
-            Route::get('/sps/operator/visitor/mv/get/m/{id}', 'getVisitorResultMobileView')->name('sps.operator.visitor.mv.get.mobile');
-            Route::get('/sps/operator/find/m/{id}', 'findm')->name('sps.operator.find.mobile');
-
-            Route::get('/sps/operator/orders/{id}/switch', 'switch')->name('sps.operator.orders.switch');
-            Route::get('/sps/operator/venue/{id}/switch', 'venueSwitch')->name('sps.operator.venue.switch');
-
-            // check-in and check-out routes
-            Route::post('/sps/operator/update-status', 'updateCheckInStatus')->name('sps.operator.profile.update.status');
-            Route::post('/sps/operator/update-item-status', 'updateCheckInItemStatus')->name('sps.operator.item.update.status');
+            Route::get('/chl/venue-admin/tasks/export/pdf', 'exportPdf')->name('chl.venue.admin.tasks.export.pdf');
+            Route::get('/chl/pdf/download', 'preview')->name('chl.pdf.download');
         });
     });
 });
@@ -360,15 +239,26 @@ Route::group(['middleware' => 'prevent-back-history'], function () {
         })->name('b');
         /*************************************** End Play ground */
 
-        // Venue Admin pick
-        Route::get('/sps/venue-admin/pick', function () {
-            return view('/sps/venue-admin/pick');
+                // Admin pick
+        Route::get('/chl/admin/pick', function () {
+            return view('/chl/admin/pick');
         })
-            ->name('sps.venue.admin.pick')
+            ->name('chl.admin.pick')
+            ->middleware('role:SuperAdmin');
+
+        Route::post('/chl/admin/events/switch', [AdminTaskController::class, 'pickEvent'])
+            ->name('chl.admin.event.switch')
+            ->middleware('role:SuperAdmin');
+
+        // Venue Admin pick
+        Route::get('/chl/venue-admin/pick', function () {
+            return view('/chl/venue-admin/pick');
+        })
+            ->name('chl.venue.admin.pick')
             ->middleware('role:VenueAdmin');
 
-        Route::post('/sps/venue-admin/events/switch', [VenueAdminStorageController::class, 'pickEvent'])
-            ->name('sps.venue.admin.event.switch')
+        Route::post('/chl/venue-admin/events/switch', [VenueAdminTaskController::class, 'pickEvent'])
+            ->name('chl.venue.admin.event.switch')
             ->middleware('role:VenueAdmin');
 
         // Route::get('/users', [UserController::class, 'index'])->name('users.index');

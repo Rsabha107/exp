@@ -446,11 +446,11 @@ class RoleController extends Controller
         $events = Event::all();
         $venues = Venue::all();
         // $locations = Location::all();
-        $functional_areas = FunctionalArea::all();
+        // $functional_areas = FunctionalArea::all();
         // $storage_types = StorageType::all();
         // $workspace = Workspace::all();
         // $departments = Department::all();
-        return view('sec.adminuser.create', compact('roles', 'events', 'functional_areas', 'venues'));
+        return view('sec.adminuser.create', compact('roles', 'events', 'venues'));
     }  // addAdminUser
 
     public function createAdminUser(Request $request)
@@ -547,12 +547,12 @@ class RoleController extends Controller
     {
         $user = User::findOrFail($id);
         $roles = Role::all();
-        $functional_areas = FunctionalArea::all();
+        // $functional_areas = FunctionalArea::all();
         $events = Event::all();
         $venues = Venue::all();
-        $storage_types = StorageType::all();
+        // $storage_types = StorageType::all();
 
-        return view('sec.adminuser.edit', compact('user', 'roles', 'events', 'functional_areas', 'venues', 'storage_types'));
+        return view('sec.adminuser.edit', compact('user', 'roles', 'events', 'venues'));
     }
 
     public function updateAdminUser(Request $request)
