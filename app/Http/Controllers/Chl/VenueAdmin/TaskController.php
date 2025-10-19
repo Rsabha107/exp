@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Storage;
 
 class TaskController extends Controller
@@ -194,9 +195,15 @@ class TaskController extends Controller
         Mail::to($currentUser->email)
         ->send(new DailyChecklistPdfMail($filePath));
 
-
-        session()->flash('pdf_generated', $fileName);
-        return $pdf->stream('tasks.pdf');
+	        // Load PDF view
+        $pdf = Pdf::loadView('chl.venue-admin.tasks.partials.pdf', [
+            'categories'   => $categories,
+            'currentVenue' => $currentVenue,
+            'currentEvent' => $currentEvent,
+            'currentUser'  => $currentUser,
+        ]);
+		
+        return $pdf->stream();
     }
 
 

@@ -18,7 +18,7 @@
         </div>
         <div class="col">
             <h5 class="mb-0 text-primary position-relative fw-bold">
-                <span class=" pe-2">{{ $currentEvent?->name ?? 'N/A' }} &amp; Charts</span>
+                <span class=" pe-2">{{ $currentEvent?->name ?? 'N/A' }}</span>
             </h5>
             <p class="mb-0 fw-bold">{{ $currentVenue?->title ?? 'N/A' }}</p>
         </div>

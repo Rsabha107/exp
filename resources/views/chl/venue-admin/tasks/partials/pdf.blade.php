@@ -1,6 +1,11 @@
 <div class="pdf-container">
     <h2>Daily Operations Checklist ({{ $categories->sum(fn($c) => $c->leadTasks->count()) }})</h2>
-
+    <div class="col">
+        <h3 class="mb-0 text-primary position-relative fw-bold">
+            <span class=" pe-2">{{ $currentEvent?->name ?? 'N/A' }}</span>
+        </h3>
+        <p class="mb-0 fw-bold">{{ $currentVenue?->title ?? 'N/A' }}</p>
+    </div>
     @foreach ($categories as $category)
     <h5 class="category-label">{{ $category->title }}</h5>
 
