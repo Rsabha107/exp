@@ -39,6 +39,7 @@
     <link href="{{asset('fnx/assets/css/theme.min.css')}}" type="text/css" rel="stylesheet" id="style-default">
     <link href="{{asset('fnx/assets/css/user-rtl.min.css')}}" type="text/css" rel="stylesheet" id="user-style-rtl">
     <link href="{{asset('fnx/assets/css/user.min.css')}}" type="text/css" rel="stylesheet" id="user-style-default">
+    <link href="{{ asset('assets/css/custom.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/branding.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/spinner.css') }}" rel="stylesheet">
 

@@ -711,5 +711,30 @@ td.editable.editing {
     background: #f8fafc;
     padding: 10px 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
+
+/* custom purple button */
+
+.btn-purple {
+    background-color: rgb(138, 26, 155);
+    border-color: rgb(138, 26, 155);
+}
+
+.btn-purple:hover {
+    background-color: rgb(115, 20, 130); /* darker shade for hover */
+    border-color: rgb(115, 20, 130);
+}
+.btn-purple:focus,
+.btn-purple:active {
+    background-color: rgb(115, 20, 130); /* darker shade for focus/active */
+    border-color: rgb(115, 20, 130);
+    box-shadow: 0 0 0 0.2rem rgba(115, 20, 130, 0.5); /* focus ring */
+}
+.btn-purple:disabled {
+    background-color: rgb(200, 150, 200); /* lighter shade for disabled */
+    border-color: rgb(200, 150, 200);
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+/* end of custom purple button */

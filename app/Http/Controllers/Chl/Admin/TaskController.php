@@ -256,7 +256,7 @@ class TaskController extends Controller
                         'category_id'     => $leadCategory->id,
                         'venue_id'        => $request_venueId,
                         'event_id'        => $request_eventId,
-                        'completed'       => false,
+                        'completed_flag'       => false,
                         // 'status_id'       => $task->status_id,
                         // 'status_color_id' => $task->status_color_id,
                         // 'due_date'        => $task->due_date,

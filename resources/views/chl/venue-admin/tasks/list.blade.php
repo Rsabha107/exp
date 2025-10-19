@@ -132,7 +132,7 @@
         </li>
 
         <div class="mt-3">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#commentModal">
+            <button class="btn category-label text-white" data-bs-toggle="modal" data-bs-target="#commentModal">
                 <i class="bi bi-plus-lg me-2"></i> Add Comment
             </button>
         </div>
@@ -177,7 +177,8 @@
 
 <style>
     .category-label {
-        background-color: #0d6efd;
+        background-color: rgb(00, 117, 201);
+        /* background-color: #0d6efd; */
         padding: 0.5rem 1rem;
         border-radius: 0.25rem;
         font-weight: 600;

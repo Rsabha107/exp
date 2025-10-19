@@ -74,7 +74,8 @@
 
 <style>
     .category-label {
-        background-color: #0d6efd;
+        background-color: rgb(00, 117, 201);
+        /* background-color: #0d6efd; */
         padding: 0.5rem 1rem;
         border-radius: 0.25rem;
         font-weight: 600;
