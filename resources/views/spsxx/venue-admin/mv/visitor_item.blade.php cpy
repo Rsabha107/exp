@@ -1,0 +1,268 @@
+<script src="{{ asset('fnx/assets/js/phoenix.js') }}"></script>
+<script src="{{ asset('assets/js/pages/sps/venue-admin/status_list_update.js') }}"></script>
+
+<style>
+    .select2-profile-status-container .select2-selection--single {
+        background-color: transparent !important;
+        border: 0px solid #ccc;
+        padding: 6px;
+        min-height: 38px;
+        color: #333;
+    }
+</style>
+
+<script>
+    // $('.badge-cell').on('click', function() {
+    //     const cell = $(this);
+    //     cell.find('.badge-display').addClass('d-none');
+    //     cell.find('.badge-select').removeClass('d-none').focus();
+    // });
+
+    $('.editable').on('focus', function() {
+        $(this).data('initialText', $(this).text().trim());
+    });
+
+    $('.editable').on('blur', function() {
+        let td = $(this);
+        let value = td.text().trim();
+        let id = td.data('id');
+        let field = td.data('field');
+        let originalValue = td.data('initialText');
+        if (value === originalValue) {
+            return; // No change, do nothing
+        }
+        // console.log('Updating field:', field, 'with value:', value, 'for item ID:', id);
+        td.css('background-color', '#fff3cd'); // yellow loading background
+        td.append(
+            '<span class="spinner-border spinner-border-sm float-end" role="status" aria-hidden="true"></span>'
+        );
+        // td.prop('contenteditable', false); // Disable editing while saving
+        // td.off('blur'); // Remove the blur event handler to prevent multiple submissions
+        $.ajax({
+            url: '/sps/venue-admin/item/update-field/' + id,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                field: field,
+                value: value
+            },
+            success: function(response) {
+                td.css('background-color', '#d4edda'); // light green
+                setTimeout(() => td.css('background-color', ''), 5000);
+                toastr.success(response["message"]);
+            },
+            error: function() {
+                td.css('background-color', '#f8d7da'); // red error
+                td.text(originalValue); // revert on error
+                toastr.error(response["message"]);
+            },
+            complete: function() {
+                td.find('.spinner-border').remove(); // remove spinner
+                setTimeout(() => td.css('background-color', ''), 1000);
+            }
+        });
+    });
+</script>
+
+<div class="row g-3 mb-6">
+    <div class="col-12 col-lg-3">
+        <div class="card bg-primary-subtle px-2 h-100">
+            <div class="border-bottom border-translucent">
+                <h5 class="pb-4 border-bottom border-translucent"></h5>
+                <ul class="list-group list-group-flush">
+                    @foreach ($op as $spectator)
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Status </span>
+                                <span>
+                                    <div class="col-auto badge-cell profile-status-cell">
+                                        <span
+                                            class="badge-display badge-phoenix fs--2 align-middle white-space-wrap ms-1 badge-phoenix-{{ $spectator->profileStatus?->color }}">
+                                            <span class="badge-label">
+                                                {{ ucfirst($spectator->profileStatus?->title) }}
+                                            </span>
+                                        </span>
+                                    </div>
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Storage Type </span>
+                                <span>
+                                    {{ $spectator->storageType->title }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Ref # </span>
+                                <span>
+                                    {{ $spectator->ref_number }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Event </span>
+                                <span
+                                    class="fw-bold {{ optional($spectator->event)->id == session()->get('EVENT_ID') ? 'text-success' : 'text-danger' }}">
+                                    {{ $spectator->event->name }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Venue </span>
+                                <span
+                                    class="fw-bold {{ optional($spectator->venue)->id == session()->get('VENUE_ID') ? 'text-success' : 'text-danger' }}">
+                                    {{ $spectator->venue->title }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Location </span>
+                                <span>
+                                    {{ $spectator->location->title }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Full name </span>
+                                <span>
+                                    {{ $spectator->full_name }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Email </span>
+                                <span>
+                                    {{ $spectator->email_address }}
+                                </span>
+                            </div>
+                        </li>
+                        <li class="list-group-item bg-transparent list-group-crm fw-bold text-body fs-9 py-2">
+                            <div class="d-flex justify-content-between"><span class="fw-normal fs-9 mx-1"> <span
+                                        class="fw-bold"></span>Phone </span>
+                                <span>
+                                    {{ $spectator->phone }}
+                                </span>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-9">
+        <div class="card bg-secondary-subtle h-100">
+            <div class="card-body">
+                <div class="table-responsive mx-n1 px-1 scrollbar">
+                    <table class="table fs-9 mb-0 border-top border-translucent">
+                        <thead>
+                            <tr>
+                                {{-- <th class="white-space-nowrap fs-9 ps-0 align-middle">
+                                    <div class="form-check mb-0 fs-8">
+                                        <input class="form-check-input" id="checkbox-bulk-reviews-select"
+                                            type="checkbox"
+                                            data-bulk-select="{&quot;body&quot;:&quot;table-latest-review-body&quot;}">
+                                    </div>
+                                </th> --}}
+                                <th class="sort white-space-nowrap align-middle" scope="col"></th>
+                                <th class="sort white-space-nowrap align-middle" scope="col" data-sort="product"
+                                    style="width:10%;">LOCATION</th>
+                                <th class="sort align-middle" scope="col" data-sort="customer" style="width:10%;">TAG
+                                </th>
+                                <th class="sort align-middle" scope="col" data-sort="rating"
+                                    style="min-width:110px;">ITEM DESCRIPTION</th>
+                                <th class="sort align-middle" scope="col" style="max-width:350px;"
+                                    data-sort="review">TIME</th>
+                                <th class="sort text-start ps-5 align-middle" scope="col" data-sort="status">DATE
+                                </th>
+                                <th class="sort text-end pe-0 align-middle" scope="col"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="list" id="table-latest-review-body">
+                            <tr class="hover-actions-trigger btn-reveal-trigger position-static">
+                                @foreach ($spectator->items as $item)
+                            <tr>
+                                {{-- <td class="fs-9 align-middle ps-0">
+                                    <div class="form-check mb-0 fs-8">
+                                        <input class="form-check-input" type="checkbox"
+                                            data-bulk-select-row="{&quot;product&quot;:&quot;Fitbit Sense Advanced Smartwatch with Tools for Heart Health, Stress Management &amp; Skin Temperature Trends, Carbon/Graphite, One Size (S &amp; L Bands)&quot;,&quot;productImage&quot;:&quot;/products/60x60/1.png&quot;,&quot;customer&quot;:{&quot;name&quot;:&quot;Richard Dawkins&quot;,&quot;avatar&quot;:&quot;&quot;},&quot;rating&quot;:5,&quot;review&quot;:&quot;This Fitbit is fantastic! I was trying to be in better shape and needed some motivation, so I decided to treat myself to a new Fitbit.&quot;,&quot;status&quot;:{&quot;title&quot;:&quot;Approved&quot;,&quot;badge&quot;:&quot;success&quot;,&quot;icon&quot;:&quot;check&quot;},&quot;time&quot;:&quot;Just now&quot;}">
+                                    </div>
+                                </td> --}}
+                                <td class="align-middle product white-space-nowrap py-0">
+                                    <a class="d-block rounded-2 border border-translucent"
+                                        href="{{ asset('storage/items/img/' . $item->item_image) }}" class="glightbox"
+                                        data-gallery="gallery1">
+                                        <img src="{{ asset('storage/items/img/' . $item->item_image) }}"
+                                            class="rounded-circle pull-up" alt="" width="53" />
+                                    </a>
+                                    {{-- <a class="d-block rounded-2 border border-translucent" href="apps/e-commerce/landing/product-details.html">
+                                    <img src="assets/img//products/60x60/1.png" alt="" width="53">
+                                        </a> --}}
+                                </td>
+                                <td contenteditable="true" data-id="{{ $item->id }}" data-field="storage_location"
+                                    class="delivery align-middle white-space-nowrap text-body py-2 editable">
+                                    {{ $item->storage_location }}
+                                    <i class="fas fa-pencil-alt edit-hover-icon text-muted d-none ms-2"></i>
+                                </td>
+                                <td contenteditable="true" data-id="{{ $item->id }}"
+                                    data-field="storage_tag_number"
+                                    class="delivery align-middle white-space-nowrap text-body py-2 editable">
+                                    {{ $item->storage_tag_number }}
+                                    <i class="fas fa-pencil-alt edit-hover-icon text-muted d-none ms-2"></i>
+                                </td>
+                                <td class="align-middle product white-space-nowrap">
+                                    <a class="fw-semibold">{{ $item->item_description }}
+                                    </a>
+                                </td>
+                                <td class="align-middle product white-space-nowrap">
+                                    <a class="fw-semibold">{{ $item->created_at->format('h:i A') }}
+                                    </a>
+                                </td>
+                                <td class="align-middle product white-space-nowrap">
+                                    <a class="fw-semibold">{{ $item->created_at->format('d M Y') }}
+                                    </a>
+                                </td>
+                                <td class="align-middle text-end white-space-nowrap pe-0 action py-2">
+                                    {{-- <div
+                                                        class="btn-reveal-trigger position-static align-items-center col-auto mb-5"> --}}
+                                    <select class="form-select select2-status mx-auto" data-id="{{ $item->id }}"
+                                        data-url="{{ route('sps.venue.admin.item.update.status') }}">
+                                        @foreach ($item_statuses as $status)
+                                            <option value="{{ $status->id }}"
+                                                {{ $item->item_status_id == $status->id ? 'selected' : '' }}
+                                                data-color="#28a745">{{ $status->title }}</option>
+                                        @endforeach
+                                    </select>
+                                    {{-- </div> --}}
+                                    {{-- <div class="btn-reveal-trigger position-static">
+                                                        <button
+                                                            class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal"
+                                                            type="button" data-bs-toggle="dropdown"
+                                                            data-boundary="window" aria-haspopup="true"
+                                                            aria-expanded="false" data-bs-reference="parent"><span
+                                                                class="fas fa-ellipsis-h fs-10"></span></button>
+                                                        <div class="dropdown-menu dropdown-menu-end py-2"><a
+                                                                class="dropdown-item" href="#!">View</a><a
+                                                                class="dropdown-item" href="#!">Export</a>
+                                                            <div class="dropdown-divider"></div><a
+                                                                class="dropdown-item text-danger"
+                                                                href="#!">Remove</a>
+                                                        </div>
+                                                    </div> --}}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
