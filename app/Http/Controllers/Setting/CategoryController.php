@@ -8,6 +8,9 @@ use App\Models\Category;
 use App\Models\Setting\Event;
 use App\Models\Setting\Venue;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryController extends Controller
 {
@@ -34,8 +37,8 @@ class CategoryController extends Controller
 
         if (!empty($search)) {
             $query->where('title', 'like', "%{$search}%")
-                ->orWhere('event', 'like', "%{$search}%")
-                ->orWhere('venue', 'like', "%{$search}%");
+                ->orWhere('event_id', 'like', "%{$search}%")
+                ->orWhere('venue_id', 'like', "%{$search}%");
         }
 
         // Total count
@@ -43,14 +46,14 @@ class CategoryController extends Controller
 
         // Get paginated results
         $categories = $query->orderBy($sort, $order)
-             ->where('event', session('EVENT_ID'))
+            ->where('event_id', session('EVENT_ID'))
             ->skip($offset)
             ->take($limit)
             ->get();
 
         // Transform for Bootstrap Table
         $rows = $categories->map(function ($category) {
-            $eventNames = Event::whereIn('id', explode(',', $category->event))
+            $eventNames = Event::whereIn('id', explode(',', $category->event_id))
                 ->pluck('name')
                 ->toArray();
 
@@ -83,31 +86,79 @@ class CategoryController extends Controller
     // Store new category
     // Store new category
     // Store
+
     public function store(Request $request)
     {
-        $request->validate([
+        //
+        // dd($request);
+        $user = Auth::user();
+
+        $rules = [
             'title' => 'required|string|max:255',
-            'event' => 'required|exists:events,id',
+            'event_id' => 'required|exists:events,id',
+        ];
 
-        ]);
+        $validator = Validator::make($request->all(), $rules);
 
-        $category = Category::create([
-            'title' => $request->title,
-            'event' => $request->event,   // store ID
-            // 'venue' => $request->venue,   // store ID
-        ]);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Category created successfully!',
-                // 'data' => $category->load('event', 'venue')
-            ]);
+        if ($validator->fails()) {
+            Log::info($validator->errors());
+            $error = true;
+            $message = implode($validator->errors()->all('<div>:message</div>'));  // use this for json/jquery
+            return response()->json(['error' => $error, 'message' => $message]);
         }
+        try {
+            $category = new Category();
 
-        return redirect()->route('setting.category.index')
-            ->with('success', 'Category created successfully.');
+            $error = false;
+            $message = 'Category created successfully.' . $category->id;
+
+            $category->title = $request->title;
+            $category->event_id = $request->event_id;
+
+            $category->save();
+
+            return response()->json(['error' => $error, 'message' => $message]);
+        } catch (\Exception $e) {
+            Log::error('Error creating category: ' . $e->getMessage());
+            $error = true;
+            $message = 'An error occurred while creating the category.';
+            return response()->json(['error' => $error, 'message' => $message]);
+        }
     }
+
+    // public function store(Request $request)
+    // {
+    //     $rules = [
+    //         'title' => 'required|string|max:255',
+    //         'event_id' => 'required|exists:events,id',
+    //     ];
+
+    //     $validatedData = $request->validate($rules);
+    //     if (!$validatedData) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Validation failed',
+    //             'errors' => $validatedData->errors()
+    //         ], 422);
+    //     }
+
+    //     $category = Category::create([
+    //         'title' => $request->title,
+    //         'event_id' => $request->event_id,   // store ID
+    //         // 'venue_id' => $request->venue_id,   // store ID
+    //     ]);
+
+    //     if ($request->ajax()) {
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Category created successfully!',
+    //             'data' => $category->load('event')
+    //         ]);
+    //     }
+
+    //     return redirect()->route('setting.category.index')
+    //         ->with('success', 'Category created successfully.');
+    // }
 
 
 
@@ -147,14 +198,14 @@ class CategoryController extends Controller
     {
         $request->validate([
             'title' => 'required|string|max:255',
-            'event' => 'required|exists:events,id',
+            'event_id' => 'required|exists:events,id',
             // 'venue' => 'required|exists:venues,id',
         ]);
 
         // Update the category
         $category->update([
             'title' => $request->title,
-            'event' => $request->event,
+            'event_id' => $request->event_id,
             // 'venue' => $request->venue,
         ]);
 
@@ -166,7 +217,7 @@ class CategoryController extends Controller
                 'data' => [
                     'id' => $category->id,
                     'title' => $category->title,
-                    'event' => $category->event,
+                    'event_id' => $category->event_id,
                     // 'venue' => $category->venue,
                 ]
             ]);

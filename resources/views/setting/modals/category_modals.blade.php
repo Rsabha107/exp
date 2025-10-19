@@ -20,24 +20,14 @@
 
                     <!-- Event Multi-Select -->
                     <div class="col-md-12 mb-3">
-                        <label for="event" class="form-label">Event</label>
-                        <select class="form-select" id="event" name="event" required>
+                        <label for="event_id" class="form-label">Event</label>
+                        <select class="form-select" id="event_id" name="event_id" required>
                             <option value="">-- Select Event --</option>
                             @foreach ($events as $event)
                             <option value="{{ $event->id }}">{{ $event->name }}</option>
                             @endforeach
                         </select>
                     </div>
-
-                    {{-- <div class="col-md-12 mb-3">
-                        <label for="venue" class="form-label">Venue</label>
-                        <select class="form-select" id="venue" name="venue" required>
-                            <option value="">-- Select Venue --</option>
-                            @foreach ($venues as $venue)
-                            <option value="{{ $venue->id }}">{{ $venue->title }}</option>
-                            @endforeach
-                        </select>
-                    </div> --}}
 
                 </div>
 
