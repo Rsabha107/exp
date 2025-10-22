@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Chl;
+
 
 use App\Models\Setting\Event;
 use App\Models\Setting\Venue;

@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Chl\Admin;
 
+use App\Models\Chl\Category;
+use App\Models\Chl\LeadCategory;
+use App\Models\Chl\LeadTask;
+use App\Models\Chl\Task;
 use App\Http\Controllers\Controller;
-use App\Models\Category;
-use App\Models\LeadCategory;
-use App\Models\LeadTask;
+use App\Models\Chl\LeadReporting;
 use App\Models\Setting\Event;
 use App\Models\Setting\Venue;
 use App\Models\StatusColor;
 use App\Models\TodoStatus;
-use App\Models\Task;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -62,58 +65,58 @@ class TaskController extends Controller
     /**
      * Store a newly created task.
      */
-   public function store(Request $request)
-{
-    $validator = Validator::make($request->all(), [
-        'title' => 'required|string|max:255',
-        'category_id' => 'nullable|exists:categories,id',
-    ]);
-
-    if ($validator->fails()) {
-        return response()->json([
-            'error' => true,
-            'message' => implode($validator->errors()->all('<div>:message</div>'))
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:categories,id',
         ]);
-    }
 
-    $event = $venue = null;
-    if ($request->category_id) {
-        $category = Category::find($request->category_id);
-        if ($category) {
-            $event_id = $category->event_id;
-            $venue_id = $category->venue_id;
+        if ($validator->fails()) {
+            return response()->json([
+                'error' => true,
+                'message' => implode($validator->errors()->all('<div>:message</div>'))
+            ]);
         }
-    }
 
-    Task::create([
-        'title' => $request->title,
-        'category_id' => $request->category_id,
-        'event_id' => $event_id,
-        'venue_id' => $venue_id,
-        'completed_flag' => false,
-    ]);
+        $event = $venue = null;
+        if ($request->category_id) {
+            $category = Category::find($request->category_id);
+            if ($category) {
+                $event_id = $category->event_id;
+                $venue_id = $category->venue_id;
+            }
+        }
 
-    if ($request->ajax()) {
-        // Fetch updated list
-        $categories = Category::with(['tasks' => function ($query) {
-            $query->with(['status', 'statusColor'])
-                  ->orderBy('created_at', 'asc');
-        }])->where('event_id', session('EVENT_ID'))->get();
-
-        $venues = Venue::all();
-
-        // Render the list partial
-        $html = view('chl.admin.tasks.list', compact('categories', 'venues'))->render();
-
-        return response()->json([
-            'error' => false,
-            'message' => 'Task created successfully!',
-            'html' => $html,
+        Task::create([
+            'title' => $request->title,
+            'category_id' => $request->category_id,
+            'event_id' => $event_id,
+            'venue_id' => $venue_id,
+            'completed_flag' => false,
         ]);
-    }
 
-    return redirect()->route('chl.admin.tasks.index')->with('success', 'Task created successfully.');
-}
+        if ($request->ajax()) {
+            // Fetch updated list
+            $categories = Category::with(['tasks' => function ($query) {
+                $query->with(['status', 'statusColor'])
+                    ->orderBy('created_at', 'asc');
+            }])->where('event_id', session('EVENT_ID'))->get();
+
+            $venues = Venue::all();
+
+            // Render the list partial
+            $html = view('chl.admin.tasks.list', compact('categories', 'venues'))->render();
+
+            return response()->json([
+                'error' => false,
+                'message' => 'Task created successfully!',
+                'html' => $html,
+            ]);
+        }
+
+        return redirect()->route('chl.admin.tasks.index')->with('success', 'Task created successfully.');
+    }
 
 
 
@@ -212,6 +215,7 @@ class TaskController extends Controller
 
     public function copyToLead(Request $request)
     {
+        Log::info('Initiating copy to LeadTask process');
         $rules = [
             'event_id' => 'required|exists:events,id',
             'venue_id' => 'required|exists:venues,id',
@@ -225,17 +229,40 @@ class TaskController extends Controller
             ], 422);
         }
 
+        DB::beginTransaction();
         try {
             appLog('Starting copy to LeadTask process');
             appLog('Request Data: ' . json_encode($request->all()));
             appLog('Session EVENT_ID: ' . session('EVENT_ID'));
-            appLog('Session VENUE_ID: ' . session('VENUE_ID'));
 
             $session_event_id = session('EVENT_ID');
-            $session_venue_id = session('VENUE_ID');
 
             $request_venueId = $request->venue_id;
             $request_eventId = $request->event_id;
+
+            // 🔹 Step 0: Check if a reporting already exists
+            $reporting = LeadReporting::where('event_id', $request_eventId)
+                ->where('venue_id', $request_venueId)
+                ->first();
+
+            if (!$reporting) {
+                // Create new reporting if not exists
+                // Log::info('Creating new LeadReportinging for Event ID: ' . $request_eventId . ' and Venue ID: ' . $request_venueId);
+                $reporting = LeadReporting::create([
+                    'reporting_date' => Carbon::createFromFormat('d/m/Y', $request->reporting_date)->toDateString(),
+                    'event_id' => $request_eventId,
+                    'venue_id' => $request_venueId,
+                    'status'   => 'pending',
+                ]);
+            } else {
+                // Optional: reset status if needed
+                Log::info('Existing LeadReportinging found with ID: ' . $reporting->id . '. Resetting status to pending.');
+                // $reporting->update(['status' => 'pending']);
+            }
+
+            $reportingId = $reporting->id;
+            // Log::info('Using LeadReportinging ID: ' . $reportingId);
+
             // Step 1: Delete old Lead data for this venue + event
             LeadTask::where('venue_id', $request_venueId)->where('event_id', $request_eventId)->delete();
             LeadCategory::where('event_id', $request_eventId)->where('venue_id', $request_venueId)->delete();
@@ -244,18 +271,22 @@ class TaskController extends Controller
             $categories = Category::where('event_id', $session_event_id)->get();
 
             foreach ($categories as $category) {
+                // Log::info('Categories loop reporting id: ' . $reportingId);
                 $leadCategory = LeadCategory::create([
                     'title'    => $category->title,
                     'venue_id' => $request_venueId,
                     'event_id' => $request_eventId,
+                    'reporting_id' => $reportingId,
                 ]);
 
                 foreach ($category->tasks as $task) {
+                    // Log::info('Tasks loop reporting id: ' . $reportingId);
                     LeadTask::create([
                         'title'           => $task->title,
                         'category_id'     => $leadCategory->id,
                         'venue_id'        => $request_venueId,
                         'event_id'        => $request_eventId,
+                        'reporting_id'    => $reportingId,
                         'completed_flag'       => false,
                         // 'status_id'       => $task->status_id,
                         // 'status_color_id' => $task->status_color_id,
@@ -264,18 +295,86 @@ class TaskController extends Controller
                 }
             }
 
+            DB::commit();
             return response()->json([
                 'success' => true,
                 'message' => 'Lead categories and tasks refreshed successfully'
             ]);
         } catch (\Exception $e) {
             Log::error('Copy to LeadTask failed: ' . $e->getMessage());
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to copy tasks'
             ], 500);
         }
     }
+    // public function copyToLead(Request $request)
+    // {
+    //     $rules = [
+    //         'event_id' => 'required|exists:events,id',
+    //         'venue_id' => 'required|exists:venues,id',
+    //     ];
+    //     $validator = Validator::make($request->all(), $rules);
+    //     if ($validator->fails()) {
+    //         $message = implode($validator->errors()->all('<div>:message</div>'));
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $message,
+    //         ], 422);
+    //     }
+
+    //     try {
+    //         appLog('Starting copy to LeadTask process');
+    //         appLog('Request Data: ' . json_encode($request->all()));
+    //         appLog('Session EVENT_ID: ' . session('EVENT_ID'));
+    //         appLog('Session VENUE_ID: ' . session('VENUE_ID'));
+
+    //         $session_event_id = session('EVENT_ID');
+    //         $session_venue_id = session('VENUE_ID');
+
+    //         $request_venueId = $request->venue_id;
+    //         $request_eventId = $request->event_id;
+    //         // Step 1: Delete old Lead data for this venue + event
+    //         LeadTask::where('venue_id', $request_venueId)->where('event_id', $request_eventId)->delete();
+    //         LeadCategory::where('event_id', $request_eventId)->where('venue_id', $request_venueId)->delete();
+
+    //         // Step 2: Copy fresh categories and tasks
+    //         $categories = Category::where('event_id', $session_event_id)->get();
+
+    //         foreach ($categories as $category) {
+    //             $leadCategory = LeadCategory::create([
+    //                 'title'    => $category->title,
+    //                 'venue_id' => $request_venueId,
+    //                 'event_id' => $request_eventId,
+    //             ]);
+
+    //             foreach ($category->tasks as $task) {
+    //                 LeadTask::create([
+    //                     'title'           => $task->title,
+    //                     'category_id'     => $leadCategory->id,
+    //                     'venue_id'        => $request_venueId,
+    //                     'event_id'        => $request_eventId,
+    //                     'completed_flag'       => false,
+    //                     // 'status_id'       => $task->status_id,
+    //                     // 'status_color_id' => $task->status_color_id,
+    //                     // 'due_date'        => $task->due_date,
+    //                 ]);
+    //             }
+    //         }
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Lead categories and tasks refreshed successfully'
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Copy to LeadTask failed: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to copy tasks'
+    //         ], 500);
+    //     }
+    // }
 
     public function switch($id)
     {

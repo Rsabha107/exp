@@ -1,4 +1,4 @@
-<div class="offcanvas offcanvas-end offcanvas-global-modal in65" id="offcanvas-add-stored-item-modal" tabindex="-1"
+{{-- <div class="offcanvas offcanvas-end offcanvas-global-modal in65" id="offcanvas-add-stored-item-modal" tabindex="-1"
     aria-labelledby="offcanvasWithBackdropLabel">
     <a class="close-task-detail in" id="close-task-detail" style="display: block;" data-bs-dismiss="offcanvas">
         <span>
@@ -7,7 +7,7 @@
     </a>
     <x-sps.admin.stored-item-drawer id="" formAction="{{ route('sps.admin.visitor.store') }}"
         formId="add_stored_item_form" :prohibitedItems="$prohibitedItems" :events="$events" :venues="$venues" :locations="$locations" />
-</div>
+</div> --}}
 
 <div class="modal fade" id="add_stored_item_modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog" role="document">

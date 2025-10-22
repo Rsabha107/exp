@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;
 use App\Models\GlobalStatus;
+use App\Models\User;
 
 class Venue extends Model implements Auditable
 {
@@ -19,6 +20,11 @@ class Venue extends Model implements Auditable
     public function active_status()
     {
         return $this->belongsTo(GlobalStatus::class, 'active_flag');
+    }
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'venue_id');
     }
 
 }

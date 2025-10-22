@@ -3,7 +3,7 @@
 namespace App\Models\Setting;
 
 use App\Models\GlobalStatus;
-use App\Models\LeadComment;
+use App\Models\Chl\LeadComment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use OwenIt\Auditing\Contracts\Auditable;    

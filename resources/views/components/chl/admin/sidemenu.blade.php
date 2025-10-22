@@ -40,6 +40,16 @@
                         </div>
                     </div>
                 </li>
+                <div class="nav-item-wrapper">
+                    <a class="nav-link label-1 {{ Request::is('chl/admin/tasks/report') ? 'active' : '' }}"
+                        href="{{ route('chl.admin.tasks.report') }}" role="button" data-bs-toggle=""
+                        aria-expanded="false">
+                        <div class="d-flex align-items-center"><span class="nav-link-icon"><span
+                                    data-feather="compass"></span></span><span
+                                class="nav-link-text-wrapper"><span class="nav-link-text">Submission Reporting</span></span>
+                        </div>
+                    </a>
+                </div>
                 <li class="nav-item">
                     <!-- label-->
                     <p class="navbar-vertical-label">Settings

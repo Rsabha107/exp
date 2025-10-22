@@ -8,7 +8,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body p-4 p-sm-5">
                         <div class="text-center mb-7">
-                            <h3 class="text-body-highlight">{{ config('settings.website_name') }} (MDS)
+                            <h3 class="text-body-highlight">{{ config('settings.website_name') }}
                             </h3>
                             <p class="text-body-tertiary">Register</p>
                         </div>
@@ -41,11 +41,12 @@
                             inputType="text" inputAttributes="" label="Phone" required="required" disabled="0" />
 
                         <div class="col-12 gy-3 mb-3">
-                            <label class="form-label" for="inputAddress2">Events
-                                (multiple)</label>
+                            <label class="form-label" for="inputAddress2">Event</label>
                             <select class="form-select js-select-event-assign-multiple" id="add_event_assigned_to"
-                                name="event_id[]" multiple="multiple" data-with="100%"
+                                name="event_id" data-with="100%"
                                 data-placeholder="<?= get_label('type_to_search', 'Type to search') ?>">
+                                <option value="">
+                                    <?= get_label('select_event', 'Select Event') ?></option>
                                 @foreach ($events as $event)
                                     <option value="{{ $event->id }}">{{ $event->name }}
                                     </option>
@@ -56,8 +57,10 @@
                             <label class="form-label" for="inputAddress2">Venues
                                 (multiple)</label>
                             <select class="form-select js-select-venue-assign-multiple" id="add_venue_assigned_to"
-                                name="venue_id[]" multiple="multiple" data-with="100%"
+                                name="venue_id"  data-with="100%"
                                 data-placeholder="<?= get_label('type_to_search', 'Type to search') ?>">
+                                <option value="">
+                                    <?= get_label('select_venue', 'Select Venue') ?></option>
                                 @foreach ($venues as $venue)
                                     <option value="{{ $venue->id }}">
                                         {{ $venue->title }}
@@ -90,8 +93,8 @@
 @push('script')
     <script>
         $(document).ready(function() {
-            $('.js-select-event-assign-multiple').select2();
-            $('.js-select-venue-assign-multiple').select2();
+            // $('.js-select-event-assign-multiple').select2();
+            // $('.js-select-venue-assign-multiple').select2();
             // $('.js-select-role-assign-multiple').select2();
         });
     </script>

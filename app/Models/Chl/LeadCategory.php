@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Chl;
+
 
 use App\Models\Setting\Event;
 use App\Models\Setting\Venue;
@@ -11,12 +12,14 @@ class LeadCategory extends Model
 {
     use HasFactory;
     protected $table = "lead_categories";
-    protected $fillable = [
-        'title',
-        'event_id',
-        'venue_id',
-    ];
+    // protected $fillable = [
+    //     'title',
+    //     'event_id',
+    //     'venue_id',
+    //     'reporting_id',
+    // ];
 
+    protected $guarded = [];
 
     public function leadTasks()
     {

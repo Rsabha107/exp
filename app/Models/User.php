@@ -87,6 +87,16 @@ class User extends Authenticatable implements Auditable
         return $this->belongsToMany(Event::class, 'user_event', 'user_id', 'event_id');
     }
 
+    public function event()
+    {
+        return $this->belongsTo(Event::class, 'event_id');
+    }
+
+    public function venue()
+    {
+        return $this->belongsTo(Venue::class, 'venue_id');
+    }
+
     public function venues()
     {
         return $this->belongsToMany(Venue::class, 'user_venue', 'user_id', 'venue_id');

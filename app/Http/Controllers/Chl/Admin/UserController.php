@@ -81,6 +81,8 @@ class UserController extends Controller
             $user->is_admin = 0;
             $user->first_login_flag = 0;
             $user->role = 'user';
+            $user->event_id = $request->event_id;
+            $user->venue_id = $request->venue_id;
             // $user->address = 'doha';
             $user->save();
 
@@ -89,22 +91,23 @@ class UserController extends Controller
             $intRoles = collect($roles)->map(function ($role) {
                 return (int)$role;
             });
+
             if ($request->roles) {
                 $user->assignRole($intRoles);
             }
 
-            if ($request->event_id) {
-                foreach ($request->event_id as $key => $data) {
-                    Log::info('Event ID: ' . $data);
-                    $user->events()->attach($request->event_id[$key]);
-                }
-            }
+            // if ($request->event_id) {
+            //     foreach ($request->event_id as $key => $data) {
+            //         Log::info('Event ID: ' . $data);
+            //         $user->events()->attach($request->event_id[$key]);
+            //     }
+            // }
 
-            if ($request->venue_id) {
-                foreach ($request->venue_id as $key => $data) {
-                    $user->venues()->attach($request->venue_id[$key]);
-                }
-            }
+            // if ($request->venue_id) {
+            //     foreach ($request->venue_id as $key => $data) {
+            //         $user->venues()->attach($request->venue_id[$key]);
+            //     }
+            // }
 
             Log::info('Assigning roles: ' . json_encode($intRoles));
 
@@ -114,19 +117,19 @@ class UserController extends Controller
             );
 
             if (config('settings.send_notifications')) {
-                $eventNames = $user->events()->exists()
-                    ? $user->events->pluck('name')->implode(', ')
-                    : 'N/A';
-                $venueNames = $user->venues()->exists()
-                    ? $user->venues->pluck('name')->implode(', ')
-                    : 'N/A';
-                $userRoless = $user->getRoleNames()->implode(', ') ?? 'N/A';
-                Log::info('User Roles: ' . $userRoless);
+                // $eventNames = $user->events()->exists()
+                //     ? $user->events->pluck('name')->implode(', ')
+                //     : 'N/A';
+                // $venueNames = $user->venues()->exists()
+                //     ? $user->venues->pluck('name')->implode(', ')
+                //     : 'N/A';
+                // $userRoless = $user->getRoleNames()->implode(', ') ?? 'N/A';
+                // Log::info('User Roles: ' . $userRoless);
                 $details = [
                     'name' => $user->name,
                     'email' => $user->email,
-                    'event' => $eventNames,
-                    'venue' => $venueNames,
+                    'event' => $user->event?->name,
+                    'venue' => $user->venue?->title,
                     // 'role' => $userRoless,
                 ];
                 // Send email notification

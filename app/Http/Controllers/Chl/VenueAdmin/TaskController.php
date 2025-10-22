@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Chl\VenueAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Mail\DailyChecklistPdfMail;
-use App\Models\Category;
-use App\Models\LeadCategory;
-use App\Models\LeadComment;
-use App\Models\LeadTask;
+use App\Models\Chl\LeadReporting;
+use App\Models\Chl\LeadCategory;
+use App\Models\Chl\LeadComment;
+use App\Models\Chl\LeadTask;
 use App\Models\Setting\Event;
 use App\Models\Setting\Venue;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
@@ -26,41 +26,42 @@ class TaskController extends Controller
      */
     // public function index()
     // {
-    //     Log::info('Fetching all tasks');
-
-    //     $venueId = auth()->user()->venue_id;
-    //     $categories = LeadTask::select('category')->where('venue_id', 5)->distinct()->pluck('category');
-
-    //     $tasks = LeadTask::where('venue_id', 5)->orderBy('created_at', 'desc')->get();
-    //     $venues = Venue::orderBy('title')->get(); // fetch all venues
-    //     return view('chl.venue-admin.tasks.partials.index', compact('tasks', 'venues', 'categories'));
-    // }
-
-    // public function index()
-    // {
     //     $venueId = session('VENUE_ID');
     //     $eventId = session('EVENT_ID');
 
-    //     $categories = LeadCategory::where('event_id', $eventId)->get();
-    //     // dd($categories);
+    //     $user = auth()->user();
+    //     appLog('User accessing tasks', ['user_id' => $user->id, 'event_id' => $eventId, 'venue_id' => $venueId]);
+
+    //     $isAssignedToEvent = $user->events()->where('event_id', $eventId)->exists();
+    //     $isAssignedToVenue = $user->venues()->where('venue_id', $venueId)->exists();
+
+    //     // ✅ If user not assigned to either, show message page
+    //     if (! $isAssignedToEvent || ! $isAssignedToVenue) {
+    //         return view('chl.venue-admin.tasks.partials.error_page', [
+    //             'message' => 'You are not assigned to this event or venue. Please contact the administrator.'
+    //         ]);
+    //     }
+
+    //     // ✅ If assigned → continue as normal
+    //     $categories = LeadCategory::where('event_id', $eventId)->where('venue_id', $venueId)->get();
+
     //     $users = User::whereHas('events', function ($q) use ($eventId) {
     //         $q->where('event_id', $eventId);
     //     })->get();
 
-    //     $loggedInEmail = auth()->user()->email;
-    //     $currentUser = $users->firstWhere('email', $loggedInEmail);
-    //     $currentUser = $currentUser ?? auth()->user();
+    //     $loggedInEmail = $user->email;
+    //     $currentUser = $users->firstWhere('email', $loggedInEmail) ?? $user;
+
     //     $tasks = LeadTask::where('venue_id', $venueId)
     //         ->where('event_id', $eventId)
     //         ->orderBy('created_at', 'desc')
     //         ->get()
     //         ->groupBy('category');
 
-    //     // Fetch current venue & event names
     //     $currentVenue = Venue::find($venueId);
     //     $currentEvent = Event::find($eventId);
 
-    //     return view('chl.venue-admin.tasks.partials.index', compact(
+    //     return view('chl.venue-admin.tasks.index', compact(
     //         'categories',
     //         'tasks',
     //         'currentVenue',
@@ -73,6 +74,8 @@ class TaskController extends Controller
     {
         $venueId = session('VENUE_ID');
         $eventId = session('EVENT_ID');
+
+        return view('/chl/venue-admin/report/list', compact('venueId', 'eventId'));
 
         $user = auth()->user();
         appLog('User accessing tasks', ['user_id' => $user->id, 'event_id' => $eventId, 'venue_id' => $venueId]);
@@ -145,7 +148,7 @@ class TaskController extends Controller
         return view('chl.venue-admin.tasks.list', compact('categories',  'currentUser', 'currentVenue', 'currentEvent'));
     }
 
-    public function exportPdf()
+    public function exportPdf($id)
     {
         // Get current venue and event from session
         $venueId = session('VENUE_ID');
@@ -189,23 +192,121 @@ class TaskController extends Controller
         // Storage::disk('private')->put('pdf-exports/' . $fileName, $pdf->output());
         Storage::disk('private')->put($filePath, $pdf->output());
 
-        Mail::to(config('settings.admin_email')) 
+        Mail::to(config('settings.admin_email'))
             ->send(new DailyChecklistPdfMail($filePath));
 
         Mail::to($currentUser->email)
-        ->send(new DailyChecklistPdfMail($filePath));
+            ->send(new DailyChecklistPdfMail($filePath));
 
-	        // Load PDF view
-        $pdf = Pdf::loadView('chl.venue-admin.tasks.partials.pdf', [
-            'categories'   => $categories,
-            'currentVenue' => $currentVenue,
-            'currentEvent' => $currentEvent,
-            'currentUser'  => $currentUser,
+
+        // ✅ Update reporting status
+        $reporting = LeadReporting::where('event_id', $eventId)
+            ->where('venue_id', $venueId)
+            ->latest()
+            ->first();
+
+        if ($reporting) {
+            $reporting->update(['status' => 'submitted']);
+            Log::info("Reporting ID {$reporting->id} marked as submitted.");
+        } else {
+            Log::warning("No reporting found for event_id={$eventId}, venue_id={$venueId}");
+        }
+
+        $error = false;
+        $message = 'Daily Operations Checklist PDF exported and emailed successfully.';
+
+        return response()->json([
+            'error' => $error,
+            'message' => $message
         ]);
-		
-        return $pdf->stream();
+
+        // return redirect()->route('chl.venue.admin.tasks.report');
+
+        // // Load PDF view
+        // $pdf = Pdf::loadView('chl.venue-admin.tasks.partials.pdf', [
+        //     'categories'   => $categories,
+        //     'currentVenue' => $currentVenue,
+        //     'currentEvent' => $currentEvent,
+        //     'currentUser'  => $currentUser,
+        // ]);
+
+        // return $pdf->stream();
     }
 
+    // public function exportPdf($id)
+    // {
+    //     // Get current venue and event from session
+    //     $venueId = session('VENUE_ID');
+    //     $eventId = session('EVENT_ID');
+    //     Log::info('VENUE_ID: ' . $venueId);
+    //     Log::info('EVENT_ID: ' . $eventId);
+
+    //     // All users for this event & venue
+    //     $users = User::whereHas('events', function ($q) use ($eventId) {
+    //         $q->where('event_id', $eventId);
+    //     })->get();
+
+    //     $loggedInEmail = auth()->user()->email;
+    //     $currentUser = $users->firstWhere('email', $loggedInEmail);
+    //     $currentUser = $currentUser ?? auth()->user();
+    //     $categories = LeadCategory::where('event_id', $eventId)->where('venue_id', $venueId)
+    //         ->with(['leadTasks' => function ($q) use ($venueId, $eventId) {
+    //             $q->where('venue_id', $venueId)
+    //                 ->where('event_id', $eventId)
+    //                 ->orderBy('created_at', 'desc');
+    //         }])
+    //         ->get();
+
+    //     // Fetch current venue & event for PDF display
+    //     $currentVenue = Venue::find($venueId);
+    //     $currentEvent = Event::find($eventId);
+
+    //     // Load PDF view
+    //     $pdf = Pdf::loadView('chl.venue-admin.tasks.partials.pdf', [
+    //         'categories'   => $categories,
+    //         'currentVenue' => $currentVenue,
+    //         'currentEvent' => $currentEvent,
+    //         'currentUser'  => $currentUser,
+    //     ]);
+
+    //     // Save PDF to storage
+    //     $timestamp = now()->format('Ymd_His');
+    //     $fileName = "exp_{$currentEvent->name}-{$currentVenue->short_name}-{$timestamp}.pdf";
+    //     $filePath = 'pdf-exports/' . $fileName;
+    //     Storage::disk('private')->makeDirectory('pdf-exports');
+    //     // Storage::disk('private')->put('pdf-exports/' . $fileName, $pdf->output());
+    //     Storage::disk('private')->put($filePath, $pdf->output());
+
+    //     Mail::to(config('settings.admin_email'))
+    //         ->send(new DailyChecklistPdfMail($filePath));
+
+    //     Mail::to($currentUser->email)
+    //         ->send(new DailyChecklistPdfMail($filePath));
+
+
+    //     // ✅ Update reporting status
+    //     $reporting = LeadReporting::where('event_id', $eventId)
+    //         ->where('venue_id', $venueId)
+    //         ->latest()
+    //         ->first();
+
+    //     if ($reporting) {
+    //         $reporting->update(['status' => 'submitted']);
+    //         Log::info("Reporting ID {$reporting->id} marked as submitted.");
+    //     } else {
+    //         Log::warning("No reporting found for event_id={$eventId}, venue_id={$venueId}");
+    //     }
+
+    //     // Load PDF view
+    //     $pdf = Pdf::loadView('chl.venue-admin.tasks.partials.pdf', [
+    //         'categories'   => $categories,
+    //         'currentVenue' => $currentVenue,
+    //         'currentEvent' => $currentEvent,
+    //         'currentUser'  => $currentUser,
+    //     ]);
+
+    //     return $pdf->stream();
+    // }
 
     public function switch($id)
     {

@@ -41,6 +41,10 @@
 
                         <div class="modal-body">
                             <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input class="form-control datetimepicker" id="reporting_date" name="reporting_date" required type="text" placeholder="dd/mm/yyyy" data-options='{"disableMobile":true,"dateFormat":"d/m/Y"}' />
+                            </div>
+                            <div class="mb-3">
                                 <label for="event_id" class="form-label">Event</label>
                                 <select id="event_dropdown" name="event_id" class="form-select">
                                     <option value="">Select Event</option>

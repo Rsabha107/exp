@@ -10,6 +10,7 @@ use App\Http\Controllers\GeneralSettings\CompanyController;
 use App\Http\Controllers\Chl\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Chl\Auth\AdminController as AuthAdminController;
 use App\Http\Controllers\Auth\MicrosoftController;
+use App\Http\Controllers\Chl\Admin\ReportController;
 use App\Http\Controllers\Setting\AppSettingController;
 use App\Http\Controllers\Setting\CategoryController;
 
@@ -17,6 +18,7 @@ use App\Http\Controllers\Setting\VenueController;
 use App\Http\Controllers\Setting\PermissionVenueEventController;
 
 use App\Http\Controllers\Chl\Admin\TaskController as AdminTaskController;
+use App\Http\Controllers\Chl\VenueAdmin\ReportController as VenueAdminReportController;
 use App\Http\Controllers\Security\ActivityAuditController;
 use App\Http\Controllers\Chl\VenueAdmin\TaskController as VenueAdminTaskController;
 use App\Http\Controllers\UtilController;
@@ -44,7 +46,7 @@ Route::get('/', function () {
     }
 
     $roleRoutes = [
-        'SuperAdmin' => 'chl.admin.tasks.index',
+        'SuperAdmin' => 'chl.admin.tasks.report',
         'VenueAdmin'   => 'chl.venue.admin.tasks.index',
     ];
 
@@ -98,7 +100,6 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
             // Route::delete('/chl/admin/tasks/{id}', 'destroy')->name('chl.admin.tasks.destroy');
             Route::delete('/chl/admin/tasks/delete/{id}',  'delete')->name('chl.admin.tasks.delete');
 
-
             Route::post('/chl/admin/tasks/copy-to-lead', 'copyToLead')
                 ->name('chl.admin.tasks.copyToLead');
 
@@ -109,6 +110,11 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
             Route::patch('/chl/admin/tasks/{task}/toggle', 'toggle')->name('chl.admin.tasks.toggle');
         });
 
+        Route::controller(ReportController::class)->group(function () {
+            Route::get('/chl/admin/tasks/report', 'index')->name('chl.admin.tasks.report');
+            Route::get('/chl/admin/tasks/report/list', 'list')->name('chl.admin.tasks.report.list');
+            Route::get('/chl/admin/tasks/show/exp/{id}', 'showPdf')->name('chl.admin.tasks.show.exp');
+        });
 
         Route::controller(CategoryController::class)->group(function () {
             Route::get('setting/categories', 'index')->name('setting.category.index');
@@ -186,6 +192,13 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
         //     Route::get('/sps/venue-admin/dashboard', 'dashboard')->name('chl.venue.admin.dashboard');
         // });
 
+        Route::controller(VenueAdminReportController::class)->group(function () {
+            Route::get('/chl/venue-admin/tasks/report', 'index')->name('chl.venue.admin.tasks.report');
+            Route::get('/chl/venue-admin/tasks/report/list', 'list')->name('chl.venue.admin.tasks.report.list');
+            Route::get('/chl/venue-admin/tasks/show/pdf/{id}', 'showPdf')->name('chl.venue.admin.tasks.show.pdf');
+            Route::get('/chl/venue-admin/tasks/show/exp/{id}', 'showExp')->name('chl.venue.admin.tasks.show.exp');
+        });
+
         Route::controller(VenueAdminTaskController::class)->group(function () {
             Route::get('/chl/venue-admin/tasks', 'index')->name('chl.venue.admin.tasks.index');
             Route::get('/chl/venue-admin/tasks/create', 'create')->name('chl.venue.admin.tasks.create');
@@ -204,8 +217,8 @@ Route::group(['middleware' => 'prevent-back-history', 'XssSanitizer'], function 
             // Toggle complete/incomplete
             Route::post('/chl/venue-admin/tasks/{task}/toggle', 'toggle')->name('chl.venue.admin.tasks.toggle');
 
-            Route::get('/chl/venue-admin/tasks/export/pdf', 'exportPdf')->name('chl.venue.admin.tasks.export.pdf');
-            Route::get('/chl/pdf/download', 'preview')->name('chl.pdf.download');
+            Route::get('/chl/venue-admin/tasks/export/pdf/{id}', 'exportPdf')->name('chl.venue.admin.tasks.export.pdf');
+            // Route::get('/chl/pdf/download', 'preview')->name('chl.pdf.download');
         });
     });
 });

@@ -33,13 +33,13 @@
 
     <ul class="list-group" style="width: 100%;">
         <li class="list-group-item d-flex justify-content-between">
-            <strong>Name:</strong> <span>{{ $currentUser->name }}</span>
+            <strong>Name:</strong> <span>{{ $currentVenue->user?->name }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-            <strong>Email:</strong> <span>{{ $currentUser->email }}</span>
+            <strong>Email:</strong> <span>{{ $currentVenue->user?->email }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-            <strong>Phone:</strong> <span>{{ $currentUser->phone ?? '-' }}</span>
+            <strong>Phone:</strong> <span>{{ $currentVenue->user?->phone ?? '-' }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <strong>Stadium:</strong> <span>{{ $categories->first()?->venue?->title ?? 'N/A' }}</span>
@@ -107,7 +107,7 @@
 
 </div>
 
-<script>
+{{-- <script>
     document.getElementById('generatePdf').addEventListener('click', function() {
         fetch("{{ route('chl.venue.admin.tasks.export.pdf') }}", {
                 method: "POST",
@@ -124,7 +124,7 @@
             })
             .catch(err => console.error(err));
     });
-</script>
+</script> --}}
 
 <style>
     body {
