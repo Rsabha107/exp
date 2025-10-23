@@ -63,6 +63,16 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            <div class="mb-3">
+                                <label for="lead_id" class="form-label">Lead</label>
+                                <select id="lead_dropdown" name="lead_id" class="form-select">
+                                    <option value="">Select Lead</option>
+                                    @foreach ($leads as $lead)
+                                    <option value="{{ $lead->id }}">{{ $lead->name_email }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
 
                         <div class="modal-footer">
@@ -84,89 +94,89 @@
 
 <script>
     $(document).ready(function() {
-    console.log("Document is ready.");
+        console.log("Document is ready.");
 
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        }
-    });
-    console.log("CSRF token setup completed:", $('meta[name="csrf-token"]').attr('content'));
-
-    $('#tasks-list').on('click', '.task-delete', function(e) {
-        e.preventDefault();
-        console.log("Delete button clicked.");
-
-        const taskId = $(this).data('id');
-        console.log("Task ID to delete:", taskId);
-
-        const url = '/chl/admin/tasks/delete/' + taskId;
-        console.log("AJAX URL:", url);
-
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "This action cannot be undone.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            console.log("Swal result:", result);
-
-            if (result.isConfirmed) {
-                console.log("User confirmed deletion.");
-
-                $.ajax({
-                    url: url,
-                    type: 'DELETE',
-                    success: function(response) {
-                        console.log("AJAX success response:", response);
-
-                        if (response.success) {
-                            // Remove the task div from the list
-                            const taskDiv = $('[data-todo-offcanvas-target="todoOffcanvas-' + response.task_id + '"]');
-                            taskDiv.fadeOut(300, function() {
-                                $(this).remove();
-                                console.log("Task div removed from DOM:", response.task_id);
-
-                                // Optionally, remove category label if it has no tasks left
-                                const categoryDiv = taskDiv.closest('h5.category-label').nextUntil('h5.category-label');
-                                if (categoryDiv.length === 0) {
-                                    taskDiv.closest('h5.category-label').remove();
-                                }
-                            });
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Deleted!',
-                                text: response.message,
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: response.message
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error("AJAX error response:", xhr.responseText);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error!',
-                            text: 'Something went wrong.'
-                        });
-                    }
-                });
-            } else {
-                console.log("User canceled deletion.");
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+        console.log("CSRF token setup completed:", $('meta[name="csrf-token"]').attr('content'));
+
+        $('#tasks-list').on('click', '.task-delete', function(e) {
+            e.preventDefault();
+            console.log("Delete button clicked.");
+
+            const taskId = $(this).data('id');
+            console.log("Task ID to delete:", taskId);
+
+            const url = '/chl/admin/tasks/delete/' + taskId;
+            console.log("AJAX URL:", url);
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "This action cannot be undone.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                console.log("Swal result:", result);
+
+                if (result.isConfirmed) {
+                    console.log("User confirmed deletion.");
+
+                    $.ajax({
+                        url: url,
+                        type: 'DELETE',
+                        success: function(response) {
+                            console.log("AJAX success response:", response);
+
+                            if (response.success) {
+                                // Remove the task div from the list
+                                const taskDiv = $('[data-todo-offcanvas-target="todoOffcanvas-' + response.task_id + '"]');
+                                taskDiv.fadeOut(300, function() {
+                                    $(this).remove();
+                                    console.log("Task div removed from DOM:", response.task_id);
+
+                                    // Optionally, remove category label if it has no tasks left
+                                    const categoryDiv = taskDiv.closest('h5.category-label').nextUntil('h5.category-label');
+                                    if (categoryDiv.length === 0) {
+                                        taskDiv.closest('h5.category-label').remove();
+                                    }
+                                });
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: response.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Oops...',
+                                    text: response.message
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            console.error("AJAX error response:", xhr.responseText);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: 'Something went wrong.'
+                            });
+                        }
+                    });
+                } else {
+                    console.log("User canceled deletion.");
+                }
+            });
+        });
     });
-});
 </script>
 @endpush

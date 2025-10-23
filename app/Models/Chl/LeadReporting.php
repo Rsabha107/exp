@@ -14,12 +14,14 @@ class LeadReporting extends Model
 
     protected $table = 'lead_reportings';
 
-    protected $fillable = [
-        'event_id',
-        'venue_id',
-        'status',
-        'reporting_date',
-    ];
+    protected $guarded = [];
+
+    // protected $fillable = [
+    //     'event_id',
+    //     'venue_id',
+    //     'status',
+    //     'reporting_date',
+    // ];
 
      public function event()
     {
@@ -34,5 +36,29 @@ class LeadReporting extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function leadComments()
+    {
+        return $this->hasMany(LeadComment::class, 'reporting_id');
+    }
+
+    public function leadCategories()
+    {
+        return $this->hasMany(LeadCategory::class, 'reporting_id');
+    }
+
+    public function leadTasks()
+    {
+        return $this->hasMany(LeadTask::class, 'reporting_id');
+    }
+
+        protected static function booted()
+    {
+        static::deleting(function ($reporting) {
+            $reporting->leadComments()->delete();
+            $reporting->leadCategories()->delete();
+            $reporting->leadTasks()->delete();
+        });
     }
 }

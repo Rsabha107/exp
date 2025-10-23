@@ -85,9 +85,9 @@ class ReportController extends Controller
     {
         // Get current venue and event from session
         $decryptedId = Crypt::decrypt($id);
-        $report = LeadReporting::findOrFail($decryptedId);
-        $eventId = $report->event_id;
-        $venueId = $report->venue_id;
+        $lead_report = LeadReporting::findOrFail($decryptedId);
+        $eventId = $lead_report->event_id;
+        $venueId = $lead_report->venue_id;
 
         // All users for this event & venue
         $users = User::whereHas('events', function ($q) use ($eventId) {
@@ -98,6 +98,7 @@ class ReportController extends Controller
         $currentUser = $users->firstWhere('email', $loggedInEmail);
         $currentUser = $currentUser ?? auth()->user();
         $categories = LeadCategory::where('event_id', $eventId)->where('venue_id', $venueId)
+        ->where('reporting_id', $lead_report->id)
             ->with(['leadTasks' => function ($q) use ($venueId, $eventId) {
                 $q->where('venue_id', $venueId)
                     ->where('event_id', $eventId)
@@ -115,6 +116,7 @@ class ReportController extends Controller
             'currentVenue' => $currentVenue,
             'currentEvent' => $currentEvent,
             'currentUser'  => $currentUser,
+            'lead_report'  => $lead_report,
         ]);
 
         return $pdf->stream();

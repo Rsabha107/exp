@@ -12,8 +12,10 @@ use App\Models\Setting\Event;
 use App\Models\Setting\Venue;
 use App\Models\StatusColor;
 use App\Models\TodoStatus;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -27,6 +29,7 @@ class TaskController extends Controller
     {
         Log::info('Fetching all tasks with categories, statuses, and colors');
 
+        $user = Auth::user();
         // Eager load tasks with status and statusColor, grouped by categories
         $categories = Category::with(['tasks' => function ($query) {
             $query->with(['status', 'statusColor'])
@@ -36,9 +39,10 @@ class TaskController extends Controller
             ->get();
 
         $events = Event::all();
-
-        // Load additional data for dropdowns or UI elements
         $venues = Venue::orderBy('title')->get();
+        $leads = User::all(); // Assuming you have a User model for leads
+
+        // $venues = Venue::orderBy('title')->get();
         // $todo_statuses = TodoStatus::all();
         // $statusColors = StatusColor::all();
         Log::info('Fetched categories: ' . $categories->count());
@@ -46,7 +50,7 @@ class TaskController extends Controller
         // Log::info('Fetched status colors: ' . $statusColors->count());
 
         // Return the main view with all necessary data
-        return view('chl.admin.tasks.index', compact('categories', 'venues', 'events'));
+        return view('chl.admin.tasks.index', compact('categories', 'venues', 'events', 'leads'));
     }
 
 
@@ -243,6 +247,7 @@ class TaskController extends Controller
             // 🔹 Step 0: Check if a reporting already exists
             $reporting = LeadReporting::where('event_id', $request_eventId)
                 ->where('venue_id', $request_venueId)
+                ->where('reporting_date', Carbon::createFromFormat('d/m/Y', $request->reporting_date)->toDateString())
                 ->first();
 
             if (!$reporting) {
@@ -253,10 +258,15 @@ class TaskController extends Controller
                     'event_id' => $request_eventId,
                     'venue_id' => $request_venueId,
                     'status'   => 'pending',
+                    'user_id'  => $request->lead_id,
                 ]);
             } else {
                 // Optional: reset status if needed
                 Log::info('Existing LeadReportinging found with ID: ' . $reporting->id . '. Resetting status to pending.');
+                return response()->json([
+                    'error' => true,
+                    'message' => 'Daily report for this event and venue already exists for the selected date.',
+                ]);
                 // $reporting->update(['status' => 'pending']);
             }
 
@@ -264,8 +274,8 @@ class TaskController extends Controller
             // Log::info('Using LeadReportinging ID: ' . $reportingId);
 
             // Step 1: Delete old Lead data for this venue + event
-            LeadTask::where('venue_id', $request_venueId)->where('event_id', $request_eventId)->delete();
-            LeadCategory::where('event_id', $request_eventId)->where('venue_id', $request_venueId)->delete();
+            // LeadTask::where('venue_id', $request_venueId)->where('event_id', $request_eventId)->delete();
+            // LeadCategory::where('event_id', $request_eventId)->where('venue_id', $request_venueId)->delete();
 
             // Step 2: Copy fresh categories and tasks
             $categories = Category::where('event_id', $session_event_id)->get();

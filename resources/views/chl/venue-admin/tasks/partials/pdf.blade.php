@@ -5,6 +5,7 @@
             <span class=" pe-2">{{ $currentEvent?->name ?? 'N/A' }}</span>
         </h3>
         <p class="mb-0 fw-bold">{{ $currentVenue?->title ?? 'N/A' }}</p>
+        <p class="mb-0 fw-bold">{{ format_date($lead_report->reporting_date) ?? 'N/A' }}</p>
     </div>
     @foreach ($categories as $category)
     <h5 class="category-label">{{ $category->title }}</h5>
@@ -33,13 +34,13 @@
 
     <ul class="list-group" style="width: 100%;">
         <li class="list-group-item d-flex justify-content-between">
-            <strong>Name:</strong> <span>{{ $currentVenue->user?->name }}</span>
+            <strong>Name:</strong> <span>{{ $lead_report->user?->name }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-            <strong>Email:</strong> <span>{{ $currentVenue->user?->email }}</span>
+            <strong>Email:</strong> <span>{{ $lead_report->user?->email }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
-            <strong>Phone:</strong> <span>{{ $currentVenue->user?->phone ?? '-' }}</span>
+            <strong>Phone:</strong> <span>{{ $lead_report->user?->phone ?? '-' }}</span>
         </li>
         <li class="list-group-item d-flex justify-content-between">
             <strong>Stadium:</strong> <span>{{ $categories->first()?->venue?->title ?? 'N/A' }}</span>

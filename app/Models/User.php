@@ -54,6 +54,7 @@ class User extends Authenticatable implements Auditable
     ];
 
 
+    
 
     public static function getpermissionGroups()
     {
@@ -81,6 +82,12 @@ class User extends Authenticatable implements Auditable
             return $hasPermission;
         }
     }
+
+    public function getNameEmailAttribute()
+    {
+        return "{$this->name}  ({$this->email})";
+    }
+
 
     public function events()
     {
